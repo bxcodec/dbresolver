@@ -19,7 +19,7 @@ func TestWrapDBWithMultiDBs(t *testing.T) {
 	}
 }
 
-func TestWrapDBWith1DB(t *testing.T) {
+func TestWrapDBWithOneDB(t *testing.T) {
 	db1 := &sql.DB{}
 
 	db := dbresolver.WrapDBs(db1)
