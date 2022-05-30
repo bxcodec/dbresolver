@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,28 +14,32 @@ import (
 // Reads and writes are automatically directed to the correct physical db.
 type DB struct {
 	rwdb            *sql.DB
-	rodb            *sql.DB
+	rodbs           []*sql.DB
 	totalConnection int
-	count           uint64 // Monotonically incrementing counter on each query
+	roCount         uint64 // Monotonically incrementing counter on each query
 }
 
 // Open concurrently opens each underlying physical db.
 // dataSourceNames must be a semi-comma separated list of DSNs with the first
-// one being used as the RW-database and the rest as slaves.
+// one being used as the RW-database and the rest as RO databases.
 func Open(driverName, dataSourceNames string) (db *DB, err error) {
-	db = &DB{}
 	conns := strings.Split(dataSourceNames, ";")
-	db.totalConnection = len(conns)
-	if len(conns) > 2 {
-		db.totalConnection = 2
+	db = &DB{
+		rodbs: make([]*sql.DB, len(conns)-1),
 	}
 
+	db.totalConnection = len(conns)
 	err = doParallely(db.totalConnection, func(i int) (err error) {
 		if i == 0 {
 			db.rwdb, err = sql.Open(driverName, conns[i])
 			return err
 		}
-		db.rodb, err = sql.Open(driverName, conns[i])
+		var roDB *sql.DB
+		roDB, err = sql.Open(driverName, conns[i])
+		if err != nil {
+			return
+		}
+		db.rodbs[i-1] = roDB
 		return err
 	})
 
@@ -47,7 +52,7 @@ func (db *DB) Close() error {
 		if i == 0 {
 			return db.rwdb.Close()
 		}
-		return db.rodb.Close()
+		return db.rodbs[i-1].Close()
 	})
 
 }
@@ -92,10 +97,7 @@ func (db *DB) Ping() error {
 		if i == 0 {
 			return db.rwdb.Ping()
 		}
-		if db.rodb != nil {
-			return db.rodb.Ping()
-		}
-		return nil
+		return db.rodbs[i-1].Ping()
 	})
 }
 
@@ -106,11 +108,7 @@ func (db *DB) PingContext(ctx context.Context) error {
 		if i == 0 {
 			return db.rwdb.PingContext(ctx)
 		}
-
-		if db.rodb != nil {
-			return db.rodb.PingContext(ctx)
-		}
-		return nil
+		return db.rodbs[i-1].Ping()
 	})
 }
 
@@ -118,22 +116,23 @@ func (db *DB) PingContext(ctx context.Context) error {
 // on each physical database, concurrently.
 func (db *DB) Prepare(query string) (Stmt, error) {
 	stmt := &stmt{}
+	roStmts := make([]*sql.Stmt, len(db.rodbs))
 	err := doParallely(db.totalConnection, func(i int) (err error) {
 		if i == 0 {
 			stmt.rwstmt, err = db.rwdb.Prepare(query)
 			return err
 		}
 
-		if db.rodb != nil {
-			stmt.rostmt, err = db.rodb.Prepare(query)
+		return doParallely(len(db.rodbs), func(i int) (err error) {
+			roStmts[i], err = db.rodbs[i].Prepare(query)
 			return err
-		}
-		return nil
+		})
 	})
 
 	if err != nil {
 		return nil, err
 	}
+	stmt.rostmts = roStmts
 
 	return stmt, nil
 }
@@ -145,23 +144,24 @@ func (db *DB) Prepare(query string) (Stmt, error) {
 // the execution of the statement.
 func (db *DB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 	stmt := &stmt{}
+	roStmts := make([]*sql.Stmt, len(db.rodbs))
 	err := doParallely(db.totalConnection, func(i int) (err error) {
 		if i == 0 {
 			stmt.rwstmt, err = db.rwdb.PrepareContext(ctx, query)
 			return err
 		}
 
-		if db.rodb != nil {
-			stmt.rostmt, err = db.rodb.PrepareContext(ctx, query)
+		return doParallely(len(db.rodbs), func(i int) (err error) {
+			roStmts[i], err = db.rodbs[i].PrepareContext(ctx, query)
 			return err
-		}
-		return nil
+		})
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
+	stmt.rostmts = roStmts
 	return stmt, nil
 }
 
@@ -202,8 +202,8 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...interfa
 // If n <= 0, no idle connections are retained.
 func (db *DB) SetMaxIdleConns(n int) {
 	db.rwdb.SetMaxIdleConns(n)
-	if db.rodb != nil {
-		db.rodb.SetMaxIdleConns(n)
+	for i := range db.rodbs {
+		db.rodbs[i].SetMaxIdleConns(n)
 	}
 }
 
@@ -215,8 +215,8 @@ func (db *DB) SetMaxIdleConns(n int) {
 // of open connections. The default is 0 (unlimited).
 func (db *DB) SetMaxOpenConns(n int) {
 	db.rwdb.SetMaxOpenConns(n)
-	if db.rodb != nil {
-		db.rodb.SetMaxOpenConns(n)
+	for i := range db.rodbs {
+		db.rodbs[i].SetMaxOpenConns(n)
 	}
 }
 
@@ -225,20 +225,24 @@ func (db *DB) SetMaxOpenConns(n int) {
 // If d <= 0, connections are reused forever.
 func (db *DB) SetConnMaxLifetime(d time.Duration) {
 	db.rwdb.SetConnMaxLifetime(d)
-	if db.rodb != nil {
-		db.rodb.SetConnMaxLifetime(d)
+	for i := range db.rodbs {
+		db.rodbs[i].SetConnMaxLifetime(d)
 	}
 }
 
 // ReadOnly returns the ReadOnly database
 func (db *DB) ReadOnly() *sql.DB {
-	if db.rodb == nil {
+	if db.totalConnection == 1 {
 		return db.rwdb
 	}
-	return db.rodb
+	return db.rodbs[db.rounRobin(len(db.rodbs))]
 }
 
 // ReadWrite returns the main writer physical database
 func (db *DB) ReadWrite() *sql.DB {
 	return db.rwdb
+}
+
+func (db *DB) rounRobin(n int) int {
+	return int(1 + (atomic.AddUint64(&db.roCount, 1) % uint64(n)))
 }

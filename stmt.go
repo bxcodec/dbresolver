@@ -18,8 +18,8 @@ type Stmt interface {
 type stmt struct {
 	db *DB
 
-	rwstmt *sql.Stmt
-	rostmt *sql.Stmt
+	rwstmt  *sql.Stmt
+	rostmts []*sql.Stmt
 }
 
 // Close closes the statement by concurrently closing all underlying
@@ -29,10 +29,8 @@ func (s *stmt) Close() error {
 		if i == 0 {
 			return s.rwstmt.Close()
 		}
-		if s.rostmt != nil {
-			return s.ROStmt().Close()
-		}
-		return nil
+
+		return s.rostmts[i-1].Close()
 	})
 }
 
@@ -88,10 +86,10 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 
 // ROStmt return the RO statement
 func (s *stmt) ROStmt() *sql.Stmt {
-	if s.rostmt == nil {
+	if len(s.rostmts) == 0 {
 		return s.rwstmt
 	}
-	return s.rostmt
+	return s.rostmts[s.db.rounRobin(len(s.rostmts))]
 }
 
 // RWStmt return the RW statement
