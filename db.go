@@ -115,7 +115,9 @@ func (db *DB) PingContext(ctx context.Context) error {
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
 func (db *DB) Prepare(query string) (Stmt, error) {
-	stmt := &stmt{}
+	stmt := &stmt{
+		db: db,
+	}
 	roStmts := make([]*sql.Stmt, len(db.rodbs))
 	err := doParallely(db.totalConnection, func(i int) (err error) {
 		if i == 0 {
@@ -143,7 +145,9 @@ func (db *DB) Prepare(query string) (Stmt, error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 func (db *DB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
-	stmt := &stmt{}
+	stmt := &stmt{
+		db: db,
+	}
 	roStmts := make([]*sql.Stmt, len(db.rodbs))
 	err := doParallely(db.totalConnection, func(i int) (err error) {
 		if i == 0 {
