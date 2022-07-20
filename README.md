@@ -1,6 +1,9 @@
 # dbresolver
 DB Connection Resolver for Cross Region Databases, Separated Readonly and ReadWrite Databases
 
+[![Go](https://github.com/bxcodec/dbresolver/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/bxcodec/dbresolver/actions/workflows/go.yml)
+[![Go.Dev](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/bxcodec/dbresolver?tab=doc)
+
 ## Idea and Inspiration
 
 This DBResolver library will split your connections to correct defined DBs. Eg, all read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Primary/Master DB. 
