@@ -12,11 +12,13 @@ type Stmt interface {
 	Exec(...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
 	Query(...interface{}) (*sql.Rows, error)
-	QueryRow(...interface{}) *sql.Row
+	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
+	QueryRow(args ...interface{}) *sql.Row
+	QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
 }
 
 type stmt struct {
-	db *DB
+	db *DBImpl
 
 	rwstmt  *sql.Stmt
 	rostmts []*sql.Stmt
@@ -52,14 +54,14 @@ func (s *stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result
 
 // Query executes a prepared query statement with the given
 // arguments and returns the query results as a *sql.Rows.
-// Query uses a slave as the underlying physical db.
+// Query uses the read only DB as the underlying physical db.
 func (s *stmt) Query(args ...interface{}) (*sql.Rows, error) {
 	return s.ROStmt().Query(args...)
 }
 
 // QueryContext executes a prepared query statement with the given
 // arguments and returns the query results as a *sql.Rows.
-// Query uses a slave as the underlying physical db.
+// Query uses the read only DB as the underlying physical db.
 func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	return s.ROStmt().QueryContext(ctx, args...)
 }
@@ -69,7 +71,7 @@ func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows
 // will be returned by a call to Scan on the returned *Row, which is always non-nil.
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
-// QueryRow uses a slave as the underlying physical db.
+// QueryRow uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
 	return s.ROStmt().QueryRow(args...)
 }
@@ -79,7 +81,7 @@ func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
 // will be returned by a call to Scan on the returned *Row, which is always non-nil.
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
-// QueryRow uses a slave as the underlying physical db.
+// QueryRowContext uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
 	return s.ROStmt().QueryRowContext(ctx, args...)
 }
