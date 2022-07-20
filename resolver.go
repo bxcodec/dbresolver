@@ -7,11 +7,11 @@ import "database/sql"
 // the rest connection will be used for RO connection
 func WrapDBs(dbs ...*sql.DB) DB {
 	if len(dbs) == 0 {
-		panic("required RW connection")
+		panic("required primary connection")
 	}
 	return &DBImpl{
-		rwdb:            dbs[0],
-		rodbs:           dbs[1:],
+		primarydb:       dbs[0],
+		replicas:        dbs[1:],
 		totalConnection: len(dbs),
 	}
 }

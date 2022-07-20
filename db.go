@@ -34,27 +34,27 @@ type DB interface {
 
 // DB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite with multiple ReadOnly database.
-// Reads and writes are automatically directed to the correct physical dbImpl.
+// Reads and writes are automatically directed to the correct db connection
 type DBImpl struct {
-	rwdb            *sql.DB
-	rodbs           []*sql.DB
+	primarydb       *sql.DB
+	replicas        []*sql.DB
 	totalConnection int
-	roCount         uint64 // Monotonically incrementing counter on each query
+	replicasCount   uint64 // Monotonically incrementing counter on each query
 }
 
-// Open concurrently opens each underlying physical dbImpl.
+// Open concurrently opens each underlying db connection
 // dataSourceNames must be a semi-comma separated list of DSNs with the first
 // one being used as the RW-database and the rest as RO databases.
-func Open(driverName, dataSourceNames string) (db DB, err error) {
+func Open(driverName, dataSourceNames string) (db *DBImpl, err error) {
 	conns := strings.Split(dataSourceNames, ";")
 	dbImpl := &DBImpl{
-		rodbs: make([]*sql.DB, len(conns)-1),
+		replicas: make([]*sql.DB, len(conns)-1),
 	}
 
 	dbImpl.totalConnection = len(conns)
 	err = doParallely(dbImpl.totalConnection, func(i int) (err error) {
 		if i == 0 {
-			dbImpl.rwdb, err = sql.Open(driverName, conns[i])
+			dbImpl.primarydb, err = sql.Open(driverName, conns[i])
 			return err
 		}
 		var roDB *sql.DB
@@ -62,7 +62,7 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 		if err != nil {
 			return
 		}
-		dbImpl.rodbs[i-1] = roDB
+		dbImpl.replicas[i-1] = roDB
 		return err
 	})
 
@@ -73,9 +73,9 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 func (dbImpl *DBImpl) Close() error {
 	return doParallely(dbImpl.totalConnection, func(i int) (err error) {
 		if i == 0 {
-			return dbImpl.rwdb.Close()
+			return dbImpl.primarydb.Close()
 		}
-		return dbImpl.rodbs[i-1].Close()
+		return dbImpl.replicas[i-1].Close()
 	})
 
 }
@@ -101,14 +101,14 @@ func (dbImpl *DBImpl) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx
 
 // Exec executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-// Exec uses the RW-database as the underlying physical dbImpl.
+// Exec uses the RW-database as the underlying db connection
 func (dbImpl *DBImpl) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return dbImpl.ReadWrite().Exec(query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
-// Exec uses the RW-database as the underlying physical dbImpl.
+// Exec uses the RW-database as the underlying db connection
 func (dbImpl *DBImpl) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return dbImpl.ReadWrite().ExecContext(ctx, query, args...)
 }
@@ -118,9 +118,9 @@ func (dbImpl *DBImpl) ExecContext(ctx context.Context, query string, args ...int
 func (dbImpl *DBImpl) Ping() error {
 	return doParallely(dbImpl.totalConnection, func(i int) error {
 		if i == 0 {
-			return dbImpl.rwdb.Ping()
+			return dbImpl.primarydb.Ping()
 		}
-		return dbImpl.rodbs[i-1].Ping()
+		return dbImpl.replicas[i-1].Ping()
 	})
 }
 
@@ -129,9 +129,9 @@ func (dbImpl *DBImpl) Ping() error {
 func (dbImpl *DBImpl) PingContext(ctx context.Context) error {
 	return doParallely(dbImpl.totalConnection, func(i int) error {
 		if i == 0 {
-			return dbImpl.rwdb.PingContext(ctx)
+			return dbImpl.primarydb.PingContext(ctx)
 		}
-		return dbImpl.rodbs[i-1].Ping()
+		return dbImpl.replicas[i-1].Ping()
 	})
 }
 
@@ -141,15 +141,15 @@ func (dbImpl *DBImpl) Prepare(query string) (Stmt, error) {
 	stmt := &stmt{
 		db: dbImpl,
 	}
-	roStmts := make([]*sql.Stmt, len(dbImpl.rodbs))
+	roStmts := make([]*sql.Stmt, len(dbImpl.replicas))
 	err := doParallely(dbImpl.totalConnection, func(i int) (err error) {
 		if i == 0 {
-			stmt.rwstmt, err = dbImpl.rwdb.Prepare(query)
+			stmt.primaryStmt, err = dbImpl.primarydb.Prepare(query)
 			return err
 		}
 
-		return doParallely(len(dbImpl.rodbs), func(i int) (err error) {
-			roStmts[i], err = dbImpl.rodbs[i].Prepare(query)
+		return doParallely(len(dbImpl.replicas), func(i int) (err error) {
+			roStmts[i], err = dbImpl.replicas[i].Prepare(query)
 			return err
 		})
 	})
@@ -157,7 +157,7 @@ func (dbImpl *DBImpl) Prepare(query string) (Stmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt.rostmts = roStmts
+	stmt.replicaStmts = roStmts
 
 	return stmt, nil
 }
@@ -171,15 +171,15 @@ func (dbImpl *DBImpl) PrepareContext(ctx context.Context, query string) (Stmt, e
 	stmt := &stmt{
 		db: dbImpl,
 	}
-	roStmts := make([]*sql.Stmt, len(dbImpl.rodbs))
+	roStmts := make([]*sql.Stmt, len(dbImpl.replicas))
 	err := doParallely(dbImpl.totalConnection, func(i int) (err error) {
 		if i == 0 {
-			stmt.rwstmt, err = dbImpl.rwdb.PrepareContext(ctx, query)
+			stmt.primaryStmt, err = dbImpl.primarydb.PrepareContext(ctx, query)
 			return err
 		}
 
-		return doParallely(len(dbImpl.rodbs), func(i int) (err error) {
-			roStmts[i], err = dbImpl.rodbs[i].PrepareContext(ctx, query)
+		return doParallely(len(dbImpl.replicas), func(i int) (err error) {
+			roStmts[i], err = dbImpl.replicas[i].PrepareContext(ctx, query)
 			return err
 		})
 	})
@@ -188,7 +188,7 @@ func (dbImpl *DBImpl) PrepareContext(ctx context.Context, query string) (Stmt, e
 		return nil, err
 	}
 
-	stmt.rostmts = roStmts
+	stmt.replicaStmts = roStmts
 	return stmt, nil
 }
 
@@ -223,14 +223,14 @@ func (dbImpl *DBImpl) QueryRowContext(ctx context.Context, query string, args ..
 }
 
 // SetMaxIdleConns sets the maximum number of connections in the idle
-// connection pool for each underlying physical dbImpl.
+// connection pool for each underlying db connection
 // If MaxOpenConns is greater than 0 but less than the new MaxIdleConns then the
 // new MaxIdleConns will be reduced to match the MaxOpenConns limit
 // If n <= 0, no idle connections are retained.
 func (dbImpl *DBImpl) SetMaxIdleConns(n int) {
-	dbImpl.rwdb.SetMaxIdleConns(n)
-	for i := range dbImpl.rodbs {
-		dbImpl.rodbs[i].SetMaxIdleConns(n)
+	dbImpl.primarydb.SetMaxIdleConns(n)
+	for i := range dbImpl.replicas {
+		dbImpl.replicas[i].SetMaxIdleConns(n)
 	}
 }
 
@@ -241,9 +241,9 @@ func (dbImpl *DBImpl) SetMaxIdleConns(n int) {
 // the new MaxOpenConns limit. If n <= 0, then there is no limit on the number
 // of open connections. The default is 0 (unlimited).
 func (dbImpl *DBImpl) SetMaxOpenConns(n int) {
-	dbImpl.rwdb.SetMaxOpenConns(n)
-	for i := range dbImpl.rodbs {
-		dbImpl.rodbs[i].SetMaxOpenConns(n)
+	dbImpl.primarydb.SetMaxOpenConns(n)
+	for i := range dbImpl.replicas {
+		dbImpl.replicas[i].SetMaxOpenConns(n)
 	}
 }
 
@@ -251,9 +251,9 @@ func (dbImpl *DBImpl) SetMaxOpenConns(n int) {
 // Expired connections may be closed lazily before reuse.
 // If d <= 0, connections are reused forever.
 func (dbImpl *DBImpl) SetConnMaxLifetime(d time.Duration) {
-	dbImpl.rwdb.SetConnMaxLifetime(d)
-	for i := range dbImpl.rodbs {
-		dbImpl.rodbs[i].SetConnMaxLifetime(d)
+	dbImpl.primarydb.SetConnMaxLifetime(d)
+	for i := range dbImpl.replicas {
+		dbImpl.replicas[i].SetConnMaxLifetime(d)
 	}
 }
 
@@ -261,25 +261,28 @@ func (dbImpl *DBImpl) SetConnMaxLifetime(d time.Duration) {
 // Expired connections may be closed lazily before reuse.
 // If d <= 0, connections are not closed due to a connection's idle time.
 func (dbImpl *DBImpl) SetConnMaxIdleTime(d time.Duration) {
-	dbImpl.rwdb.SetConnMaxIdleTime(d)
-	for i := range dbImpl.rodbs {
-		dbImpl.rodbs[i].SetConnMaxIdleTime(d)
+	dbImpl.primarydb.SetConnMaxIdleTime(d)
+	for i := range dbImpl.replicas {
+		dbImpl.replicas[i].SetConnMaxIdleTime(d)
 	}
 }
 
-// ReadOnly returns the ReadOnly database
+// ReadOnly returns the replica database
 func (dbImpl *DBImpl) ReadOnly() *sql.DB {
 	if dbImpl.totalConnection == 1 {
-		return dbImpl.rwdb
+		return dbImpl.primarydb
 	}
-	return dbImpl.rodbs[dbImpl.rounRobin(len(dbImpl.rodbs))]
+	return dbImpl.replicas[dbImpl.rounRobin(len(dbImpl.replicas))]
 }
 
-// ReadWrite returns the main writer physical database
+// ReadWrite returns the primary database
 func (dbImpl *DBImpl) ReadWrite() *sql.DB {
-	return dbImpl.rwdb
+	return dbImpl.primarydb
 }
 
 func (dbImpl *DBImpl) rounRobin(n int) int {
-	return int(1 + (atomic.AddUint64(&dbImpl.roCount, 1) % uint64(n)))
+	if n <= 1 {
+		return 0
+	}
+	return int(1 + (atomic.AddUint64(&dbImpl.replicasCount, 1) % uint64(n)))
 }

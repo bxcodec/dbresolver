@@ -20,8 +20,8 @@ type Stmt interface {
 type stmt struct {
 	db *DBImpl
 
-	rwstmt  *sql.Stmt
-	rostmts []*sql.Stmt
+	primaryStmt  *sql.Stmt
+	replicaStmts []*sql.Stmt
 }
 
 // Close closes the statement by concurrently closing all underlying
@@ -29,10 +29,10 @@ type stmt struct {
 func (s *stmt) Close() error {
 	return doParallely(s.db.totalConnection, func(i int) error {
 		if i == 0 {
-			return s.rwstmt.Close()
+			return s.primaryStmt.Close()
 		}
 
-		return s.rostmts[i-1].Close()
+		return s.replicaStmts[i-1].Close()
 	})
 }
 
@@ -86,15 +86,15 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 	return s.ROStmt().QueryRowContext(ctx, args...)
 }
 
-// ROStmt return the RO statement
+// ROStmt return the replica statment
 func (s *stmt) ROStmt() *sql.Stmt {
-	if len(s.rostmts) == 0 {
-		return s.rwstmt
+	if len(s.replicaStmts) == 0 {
+		return s.primaryStmt
 	}
-	return s.rostmts[s.db.rounRobin(len(s.rostmts))]
+	return s.replicaStmts[s.db.rounRobin(len(s.replicaStmts))]
 }
 
-// RWStmt return the RW statement
+// RWStmt return the primary statement
 func (s *stmt) RWStmt() *sql.Stmt {
-	return s.rwstmt
+	return s.primaryStmt
 }
