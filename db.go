@@ -77,7 +77,6 @@ func (dbImpl *DBImpl) Close() error {
 		}
 		return dbImpl.replicas[i-1].Close()
 	})
-
 }
 
 // Driver returns the physical database's underlying driver.
@@ -257,7 +256,7 @@ func (dbImpl *DBImpl) SetConnMaxLifetime(d time.Duration) {
 	}
 }
 
-//SetConnMaxIdleTime sets the maximum amount of time a connection may be idle.
+// SetConnMaxIdleTime sets the maximum amount of time a connection may be idle.
 // Expired connections may be closed lazily before reuse.
 // If d <= 0, connections are not closed due to a connection's idle time.
 func (dbImpl *DBImpl) SetConnMaxIdleTime(d time.Duration) {
