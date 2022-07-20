@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func Example_WithMultiConnectionDB() {
+func Example_WithMultiSQLConnectionDB() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
