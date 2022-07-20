@@ -97,8 +97,12 @@ func main() {
 	connectionDB := dbresolver.WrapDBs(dbPrimary, dbReadOnlyReplica)
 
 	//now you can use the connection for all DB operation
-	connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1")       // will use primaryDB
-	connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
+	if err != nil {
+		panic(err)
+	}
+	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+
 }
 
 ```
@@ -143,8 +147,12 @@ func main() {
 	}
 
 	//now you can use the connection for all DB operation
-	connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1")       // will use primaryDB
-	connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
+	if err != nil {
+		panic(err)
+	}
+	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+
 
 }
 
