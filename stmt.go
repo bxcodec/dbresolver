@@ -40,7 +40,6 @@ func (s *stmt) Close() error {
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
 func (s *stmt) Exec(args ...interface{}) (sql.Result, error) {
-	// return s.stmts[0].Exec(args...)
 	return s.RWStmt().Exec(args...)
 }
 
@@ -48,7 +47,6 @@ func (s *stmt) Exec(args ...interface{}) (sql.Result, error) {
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
 func (s *stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
-	// return s.stmts[0].Exec(args...)
 	return s.RWStmt().ExecContext(ctx, args...)
 }
 
@@ -86,7 +84,7 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 	return s.ROStmt().QueryRowContext(ctx, args...)
 }
 
-// ROStmt return the replica statment
+// ROStmt return the replica statement
 func (s *stmt) ROStmt() *sql.Stmt {
 	if len(s.replicaStmts) == 0 {
 		return s.primaryStmt

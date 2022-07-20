@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/bxcodec/dbresolver"
 	_ "github.com/lib/pq"
 )
 
-func Example_WithMultiSQLConnectionDB() {
+func ExampleWrapDBs() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
@@ -28,25 +29,28 @@ func Example_WithMultiSQLConnectionDB() {
 	// open database for primary
 	dbPrimary, err := sql.Open("postgres", rwPrimary)
 	if err != nil {
-		panic(err)
+		log.Print("go error when connecting to the DB")
 	}
-	//configure the DBs for other setup eg, tracing, etc
+	// configure the DBs for other setup eg, tracing, etc
 	// eg, tracing.Postgres(dbPrimary)
 
 	// open database for replica
 	dbReadOnlyReplica, err := sql.Open("postgres", readOnlyReplica)
 	if err != nil {
-		panic(err)
+		log.Print("go error when connecting to the DB")
 	}
-	//configure the DBs for other setup eg, tracing, etc
+	// configure the DBs for other setup eg, tracing, etc
 	// eg, tracing.Postgres(dbReadOnlyReplica)
 
 	connectionDB := dbresolver.WrapDBs(dbPrimary, dbReadOnlyReplica)
 
-	//now you can use the connection for all DB operation
-	connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1")       // will use primaryDB
-	connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+	// now you can use the connection for all DB operation
+	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
+	if err != nil {
+		log.Print("go error when executing the query to the DB")
+	}
+	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
 
-	//Output:
+	// Output:
 	//
 }
