@@ -19,7 +19,7 @@ This DBResolver library will split your connections to correct defined DBs. Eg, 
 </details>
 
 ### Usecases 2: Cross Region Database
-<details>
+<details open>
 
 <summary>Click to Expand</summary>
 
