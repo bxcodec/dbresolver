@@ -1,7 +1,7 @@
 # dbresolver
 DB Connection Resolver for Cross Region Databases, Separated Readonly and ReadWrite Databases
 
-## Ideas and Inspiration
+## Idea and Inspiration
 
 ![image](https://user-images.githubusercontent.com/11002383/179894026-7206cbb8-35d7-4fd9-9ce9-4e62bf1ec156.png)
 
