@@ -6,11 +6,13 @@ DB Connection Resolver for Cross Region Databases, Separated Readonly and ReadWr
 This DBResolver library will split your connections to correct defined DBs. Eg, all Read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Write/Master DB. 
 
 ### Usecase 1: Separated RW and RO Database connection
-<details>
+<details open>
 
 <summary>Click to Expand</summary>
 
 - You have your application deployed
+- Your application is heavy on read operations
+- Your DBs replicated to multiple replicas for faster queries
 - You separate the connections for optimized query 
 - ![image](https://user-images.githubusercontent.com/11002383/180010864-c9e2a0b6-520d-48d6-bf0d-490eb070e75d.png) 
 
