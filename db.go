@@ -8,7 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 )
-
+// DB interface is a contract that supported by this library. All offered function of this library defined here.
+// This supposed to be aligned with sql.DB, but since some of the functions is not relevant with multi db connection, we decided to not support it
 type DB interface {
 	Begin() (*sql.Tx, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
@@ -32,8 +33,8 @@ type DB interface {
 	// Stats() sql.DBStats // not relevant for multi connection DB
 }
 
-// DB is a logical database with multiple underlying physical databases
-// forming a single ReadWrite with multiple ReadOnly database.
+// DBImpl is a logical database with multiple underlying physical databases
+// forming a single ReadWrite (primary) with multiple ReadOnly(replicas) database.
 // Reads and writes are automatically directed to the correct db connection
 type DBImpl struct {
 	primarydb       *sql.DB
