@@ -164,12 +164,12 @@ func main() {
 
 ## Important Notes
 
-- Primary Database will be used when you called these functions 
+- Primary Database will be used when you call these functions 
   - `Exec`
   - `ExecContext`
   - `Begin` (transaction will use primary)
   - `BeginTx`
-- Replica Databases will be used when you called these functions
+- Replica Databases will be used when you call these functions
   - `Query`
   - `QueryContext`
   - `QueryRow`
