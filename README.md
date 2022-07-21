@@ -46,7 +46,6 @@ go get -u github.com/bxcodec/dbresolver
 ```
 
 # Example
----
 
 ### With Multi *sql.DB
 <details open>
@@ -162,6 +161,19 @@ func main() {
 ```
 
 </details>
+
+## Important Notes
+
+- Primary Database will be used when you called these functions 
+  - `Exec`
+  - `ExecContext`
+  - `Begin` (transaction will use primary)
+  - `BeginTx`
+- Replica Databases will be used when you called these functions
+  - `Query`
+  - `QueryContext`
+  - `QueryRow`
+  - `QueryRowContext`
 
 ## Contribution
 ---
