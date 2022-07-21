@@ -8,8 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 )
-// DB interface is a contract that supported by this library. All offered function of this library defined here.
-// This supposed to be aligned with sql.DB, but since some of the functions is not relevant with multi db connection, we decided to not support it
+
+// DB interface is a contract that supported by this library.
+// All offered function of this library defined here.
+// This supposed to be aligned with sql.DB, but since some of the functions is not relevant
+// with multi dbs connection, we decided to not support it
 type DB interface {
 	Begin() (*sql.Tx, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
@@ -45,7 +48,7 @@ type DBImpl struct {
 
 // Open concurrently opens each underlying db connection
 // dataSourceNames must be a semi-comma separated list of DSNs with the first
-// one being used as the RW-database and the rest as RO databases.
+// one being used as the RW-database(primary) and the rest as RO databases (replicas).
 func Open(driverName, dataSourceNames string) (db *DBImpl, err error) {
 	conns := strings.Split(dataSourceNames, ";")
 	dbImpl := &DBImpl{
