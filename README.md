@@ -8,6 +8,8 @@ Golang Database Resolver and Wrapper for any multiple database connections topol
 
 This DBResolver library will split your connections to correct defined DBs. Eg, all read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Primary/Master DB. 
 
+Read more for the explanation on this [blog post](https://betterprogramming.pub/create-a-cross-region-rdbms-connection-library-with-dbresolver-5072bed6a7b8)
+
 ### Usecase 1: Separated RW and RO Database connection
 <details open>
 
