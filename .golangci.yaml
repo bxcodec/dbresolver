@@ -40,10 +40,10 @@ linters-settings:
       - condition
       - return
     ignored-numbers:
-      - '0'
-      - '1'
-      - '2'
-      - '3'
+      - "0"
+      - "1"
+      - "2"
+      - "3"
     ignored-functions:
       - strings.SplitN
 
@@ -75,7 +75,7 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - deadcode
+    # - deadcode #deprecated
     - depguard
     - dogsled
     - dupl
@@ -100,14 +100,14 @@ linters:
     - noctx
     - nolintlint
     - staticcheck
-    - structcheck
+    # - structcheck #deprecated
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
     - revive
-    - varcheck
+    # - varcheck #deprecated
     - whitespace
 
   # don't enable:
@@ -135,5 +135,5 @@ issues:
 
 run:
   timeout: 5m
-  go: '1.17' # TODO(ldez): we force to use an old version of Go for the CI and the tests.
+  go: "1.17" # TODO(ldez): we force to use an old version of Go for the CI and the tests.
   skip-dirs: []
