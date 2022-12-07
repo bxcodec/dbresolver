@@ -287,5 +287,5 @@ func (dbImpl *DBImpl) rounRobin(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int(1 + (atomic.AddUint64(&dbImpl.replicasCount, 1) % uint64(n)))
+	return int((atomic.AddUint64(&dbImpl.replicasCount, 1) % uint64(n)))
 }
