@@ -44,7 +44,7 @@ func TestClose(t *testing.T) {
 }
 
 func TestReplicaRoundRobin(t *testing.T) {
-	db := &databaseResolver{}
+	db := &sqlDB{}
 	last := -1
 
 	err := quick.Check(func(n int) bool {

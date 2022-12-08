@@ -18,7 +18,7 @@ type Stmt interface {
 }
 
 type stmt struct {
-	db *databaseResolver
+	db *sqlDB
 
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
