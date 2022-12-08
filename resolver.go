@@ -9,7 +9,7 @@ func WrapDBs(dbs ...*sql.DB) DB {
 	if len(dbs) == 0 {
 		panic("required primary connection")
 	}
-	return &DatabaseResolver{
+	return &databaseResolver{
 		primarydbs:      dbs[:1],
 		replicas:        dbs[1:],
 		totalConnection: len(dbs),
@@ -24,7 +24,7 @@ func WrapDBsMultiPrimary(primaryDBs, roDBs []*sql.DB) DB {
 		panic("required primary connection")
 	}
 
-	return &DatabaseResolver{
+	return &databaseResolver{
 		primarydbs:      primaryDBs,
 		replicas:        roDBs,
 		totalConnection: len(primaryDBs) + len(roDBs),
