@@ -19,8 +19,8 @@ func TestOpen(t *testing.T) {
 		t.Error(err)
 	}
 
-	if expected := (db.primarydb); expected == nil {
-		t.Error("PrimaryDB is nil")
+	if expected := len(db.primarydbs); expected == 0 {
+		t.Error("No Primary DB is alive")
 	}
 
 	if want, got := 2, len(db.replicas); want != got {
@@ -44,11 +44,11 @@ func TestClose(t *testing.T) {
 }
 
 func TestReplicaRoundRobin(t *testing.T) {
-	db := &DBImpl{}
+	db := &DatabaseResolver{}
 	last := -1
 
 	err := quick.Check(func(n int) bool {
-		index := db.rounRobin(n)
+		index := db.rounRobinRO(n)
 		if n <= 1 {
 			return index == 0
 		}
