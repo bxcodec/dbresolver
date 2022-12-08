@@ -17,7 +17,7 @@ type DB interface {
 	Begin() (*sql.Tx, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	Close() error
-	Conn(ctx context.Context) (*sql.Conn, error) // not relevant for multi connection DB
+	Conn(ctx context.Context) (*sql.Conn, error) // db stats for only primary db
 	Driver() driver.Driver
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -33,7 +33,7 @@ type DB interface {
 	SetConnMaxLifetime(d time.Duration)
 	SetMaxIdleConns(n int)
 	SetMaxOpenConns(n int)
-	Stats() sql.DBStats // not relevant for multi connection DB
+	Stats() sql.DBStats // db stats for only primary db
 }
 
 // DBImpl is a logical database with multiple underlying physical databases
