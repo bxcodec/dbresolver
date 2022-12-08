@@ -1,4 +1,5 @@
 # dbresolver
+
 Golang Database Resolver and Wrapper for any multiple database connections topology, eg. master-slave replication database, cross-region application.
 
 [![Go](https://github.com/bxcodec/dbresolver/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/bxcodec/dbresolver/actions/workflows/go.yml)
@@ -6,11 +7,12 @@ Golang Database Resolver and Wrapper for any multiple database connections topol
 
 ## Idea and Inspiration
 
-This DBResolver library will split your connections to correct defined DBs. Eg, all read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Primary/Master DB. 
+This DBResolver library will split your connections to correct defined DBs. Eg, all read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Primary/Master DB.
 
 Read more for the explanation on this [blog post](https://betterprogramming.pub/create-a-cross-region-rdbms-connection-library-with-dbresolver-5072bed6a7b8)
 
 ### Usecase 1: Separated RW and RO Database connection
+
 <details open>
 
 <summary>Click to Expand</summary>
@@ -18,12 +20,13 @@ Read more for the explanation on this [blog post](https://betterprogramming.pub/
 - You have your application deployed
 - Your application is heavy on read operations
 - Your DBs replicated to multiple replicas for faster queries
-- You separate the connections for optimized query 
-- ![image](https://user-images.githubusercontent.com/11002383/180010864-c9e2a0b6-520d-48d6-bf0d-490eb070e75d.png) 
+- You separate the connections for optimized query
+- ![image](https://user-images.githubusercontent.com/11002383/180010864-c9e2a0b6-520d-48d6-bf0d-490eb070e75d.png)
 
 </details>
 
 ### Usecases 2: Cross Region Database
+
 <details open>
 
 <summary>Click to Expand</summary>
@@ -49,7 +52,8 @@ go get -u github.com/bxcodec/dbresolver
 
 # Example
 
-### With Multi *sql.DB
+### With Multi \*sql.DB
+
 <details open>
 
 <summary>Click to Expand</summary>
@@ -62,7 +66,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/bxcodec/dbresolver"
+	"github.com/bxcodec/dbresolver/v2"
 	_ "github.com/lib/pq"
 )
 
@@ -113,8 +117,8 @@ func main() {
 
 </details>
 
-
 ### With Multi Connection String
+
 <details open>
 
 <summary>Click to Expand</summary>
@@ -126,7 +130,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bxcodec/dbresolver"
+	"github.com/bxcodec/dbresolver/v2"
 	_ "github.com/lib/pq"
 )
 
@@ -166,7 +170,7 @@ func main() {
 
 ## Important Notes
 
-- Primary Database will be used when you call these functions 
+- Primary Database will be used when you call these functions
   - `Exec`
   - `ExecContext`
   - `Begin` (transaction will use primary)
@@ -178,6 +182,7 @@ func main() {
   - `QueryRowContext`
 
 ## Contribution
+
 ---
 
 To contrib to this project, you can open a PR or an issue.
