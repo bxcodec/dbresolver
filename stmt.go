@@ -32,7 +32,8 @@ func (s *stmt) Close() error {
 			return s.primaryStmts[i].Close()
 		}
 
-		return s.replicaStmts[i-1].Close()
+		roIndex := i - len(s.primaryStmts)
+		return s.replicaStmts[roIndex].Close()
 	})
 }
 

@@ -93,8 +93,8 @@ func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceName
 			dbResolver.primarydbs[0], err = sql.Open(driverName, primaryConns[i])
 			return err
 		}
-		roIndx := i - len(primaryConns)
-		dbResolver.replicas[roIndx], err = sql.Open(driverName, readOnlyConns[roIndx])
+		roIndex := i - len(primaryConns)
+		dbResolver.replicas[roIndex], err = sql.Open(driverName, readOnlyConns[roIndex])
 		return err
 	})
 
@@ -108,8 +108,8 @@ func (dbResolver *DatabaseResolver) Close() error {
 			return dbResolver.primarydbs[i].Close()
 		}
 
-		roIndx := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndx].Close()
+		roIndex := i - len(dbResolver.primarydbs)
+		return dbResolver.replicas[roIndex].Close()
 	})
 }
 
@@ -154,8 +154,8 @@ func (dbResolver *DatabaseResolver) Ping() error {
 			return dbResolver.primarydbs[i].Ping()
 		}
 
-		roIndx := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndx].Ping()
+		roIndex := i - len(dbResolver.primarydbs)
+		return dbResolver.replicas[roIndex].Ping()
 	})
 }
 
@@ -166,8 +166,8 @@ func (dbResolver *DatabaseResolver) PingContext(ctx context.Context) error {
 		if i < len(dbResolver.primarydbs) {
 			return dbResolver.primarydbs[i].PingContext(ctx)
 		}
-		roIndx := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndx].PingContext(ctx)
+		roIndex := i - len(dbResolver.primarydbs)
+		return dbResolver.replicas[roIndex].PingContext(ctx)
 	})
 }
 
@@ -185,8 +185,8 @@ func (dbResolver *DatabaseResolver) Prepare(query string) (Stmt, error) {
 			return err
 		}
 
-		roIndx := i - len(dbResolver.primarydbs)
-		roStmts[roIndx], err = dbResolver.replicas[roIndx].Prepare(query)
+		roIndex := i - len(dbResolver.primarydbs)
+		roStmts[roIndex], err = dbResolver.replicas[roIndex].Prepare(query)
 		return err
 	})
 
@@ -216,8 +216,8 @@ func (dbResolver *DatabaseResolver) PrepareContext(ctx context.Context, query st
 			return err
 		}
 
-		roIndx := i - len(dbResolver.primarydbs)
-		roStmts[roIndx], err = dbResolver.replicas[roIndx].PrepareContext(ctx, query)
+		roIndex := i - len(dbResolver.primarydbs)
+		roStmts[roIndex], err = dbResolver.replicas[roIndex].PrepareContext(ctx, query)
 		return err
 	})
 
