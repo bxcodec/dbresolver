@@ -290,7 +290,8 @@ func (dbImpl *DBImpl) rounRobin(n int) int {
 	return int((atomic.AddUint64(&dbImpl.replicasCount, 1) % uint64(n)))
 }
 
-// Conn returns a single connection by either opening a new connection or returning an existing connection from the connection pool of primary db.
+// Conn returns a single connection by either opening a new connection or returning an existing connection from the
+// connection pool of primary db.
 func (dbImpl *DBImpl) Conn(ctx context.Context) (*sql.Conn, error) {
 	return dbImpl.primarydb.Conn(ctx)
 }
