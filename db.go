@@ -75,6 +75,10 @@ func Open(driverName, dataSourceNames string) (db *DatabaseResolver, err error) 
 	return dbResolver, err
 }
 
+// OpenMultiPrimary concurrently opens each underlying db connection
+// both primaryDataSourceNames and readOnlyDataSourceNames must be a semi-comma separated list of DSNs
+// primaryDataSourceNames will be used as the RW-database(primary)
+// and readOnlyDataSourceNames as RO databases (replicas).
 func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceNames string) (db *DatabaseResolver, err error) {
 	primaryConns := strings.Split(primaryDataSourceNames, ";")
 	readOnlyConns := strings.Split(readOnlyDataSourceNames, ";")
@@ -311,7 +315,7 @@ func (dbResolver *DatabaseResolver) SetConnMaxIdleTime(d time.Duration) {
 	}
 }
 
-// ReadOnly returns the replica database
+// ReadOnly returns the readonly database
 func (dbResolver *DatabaseResolver) ReadOnly() *sql.DB {
 	if dbResolver.totalConnection == len(dbResolver.primarydbs) {
 		return dbResolver.primarydbs[dbResolver.rounRobinRW(len(dbResolver.primarydbs))]
