@@ -132,7 +132,6 @@ func (dbResolver *sqlDB) Driver() driver.Driver {
 
 // Begin starts a transaction on the RW-database. The isolation level is dependent on the driver.
 func (dbResolver *sqlDB) Begin() (*sql.Tx, error) {
-	// TODO (bxcodec): test transaction in multi-master connection
 	return dbResolver.ReadWrite().Begin()
 }
 
@@ -142,7 +141,6 @@ func (dbResolver *sqlDB) Begin() (*sql.Tx, error) {
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
 func (dbResolver *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
-	// TODO (bxcodec): test  transaction in multi-master connection
 	return dbResolver.ReadWrite().BeginTx(ctx, opts)
 }
 
