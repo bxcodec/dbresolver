@@ -19,7 +19,7 @@ func WrapDBs(dbs ...*sql.DB) DB {
 // WrapDBsMultiPrimary will wrap all DB connection
 // first DB array connection is the primary-writer connection (RW),
 // the second DB array will be used for RO connection
-func WrapDBsMultiPrimary(primaryDBs []*sql.DB, roDBs []*sql.DB) DB {
+func WrapDBsMultiPrimary(primaryDBs, roDBs []*sql.DB) DB {
 	if len(primaryDBs) == 0 {
 		panic("required primary connection")
 	}
