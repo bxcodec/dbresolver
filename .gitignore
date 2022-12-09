@@ -12,7 +12,8 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor
 bin/
 coverage.txt
 oryxBuildBinary
+.idea

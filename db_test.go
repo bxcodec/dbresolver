@@ -19,7 +19,7 @@ func TestOpen(t *testing.T) {
 		t.Error(err)
 	}
 
-	if expected := (db.primarydb); expected == nil {
+	if expected := db.primarydb; expected == nil {
 		t.Error("PrimaryDB is nil")
 	}
 
