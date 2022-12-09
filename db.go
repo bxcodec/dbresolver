@@ -42,11 +42,11 @@ type DB interface {
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) database.
 // Reads and writes are automatically directed to the correct db connection
 type sqlDB struct {
-	primarydbs      []*sql.DB
+	primaries       []*sql.DB
 	replicas        []*sql.DB
 	totalConnection int
 	replicasCount   uint64 // Monotonically incrementing counter on each query
-	primarydbsCount uint64 // Monotonically incrementing counter on each query
+	primariesCount  uint64 // Monotonically incrementing counter on each query
 }
 
 // Open concurrently opens each underlying db connection
@@ -54,15 +54,15 @@ type sqlDB struct {
 // one being used as the RW-database(primary) and the rest as RO databases (replicas).
 func Open(driverName, dataSourceNames string) (db DB, err error) {
 	conns := strings.Split(dataSourceNames, ";")
-	dbResolver := &sqlDB{
-		replicas:   make([]*sql.DB, len(conns)-1),
-		primarydbs: make([]*sql.DB, 1),
+	database := &sqlDB{
+		replicas:  make([]*sql.DB, len(conns)-1),
+		primaries: make([]*sql.DB, 1),
 	}
 
-	dbResolver.totalConnection = len(conns)
-	err = doParallely(dbResolver.totalConnection, func(i int) (err error) {
+	database.totalConnection = len(conns)
+	err = doParallely(database.totalConnection, func(i int) (err error) {
 		if i == 0 {
-			dbResolver.primarydbs[0], err = sql.Open(driverName, conns[i])
+			database.primaries[0], err = sql.Open(driverName, conns[i])
 			return err
 		}
 		var roDB *sql.DB
@@ -70,11 +70,11 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 		if err != nil {
 			return
 		}
-		dbResolver.replicas[i-1] = roDB
+		database.replicas[i-1] = roDB
 		return err
 	})
 
-	return dbResolver, err
+	return database, err
 }
 
 // OpenMultiPrimary concurrently opens each underlying db connection
@@ -84,55 +84,55 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceNames string) (db DB, err error) {
 	primaryConns := strings.Split(primaryDataSourceNames, ";")
 	readOnlyConns := strings.Split(readOnlyDataSourceNames, ";")
-	dbResolver := &sqlDB{
-		replicas:   make([]*sql.DB, len(readOnlyConns)),
-		primarydbs: make([]*sql.DB, len(primaryConns)),
+	database := &sqlDB{
+		replicas:  make([]*sql.DB, len(readOnlyConns)),
+		primaries: make([]*sql.DB, len(primaryConns)),
 	}
 
-	dbResolver.totalConnection = len(primaryConns) + len(readOnlyConns)
-	err = doParallely(dbResolver.totalConnection, func(i int) (err error) {
+	database.totalConnection = len(primaryConns) + len(readOnlyConns)
+	err = doParallely(database.totalConnection, func(i int) (err error) {
 		if i < len(primaryConns) {
-			dbResolver.primarydbs[0], err = sql.Open(driverName, primaryConns[i])
+			database.primaries[0], err = sql.Open(driverName, primaryConns[i])
 			return err
 		}
 		roIndex := i - len(primaryConns)
-		dbResolver.replicas[roIndex], err = sql.Open(driverName, readOnlyConns[roIndex])
+		database.replicas[roIndex], err = sql.Open(driverName, readOnlyConns[roIndex])
 		return err
 	})
 
-	return dbResolver, err
+	return database, err
 }
 
 // PrimaryDBs return all the active primary DB
-func (dbResolver *sqlDB) PrimaryDBs() []*sql.DB {
-	return dbResolver.primarydbs
+func (database *sqlDB) PrimaryDBs() []*sql.DB {
+	return database.primaries
 }
 
 // PrimaryDBs return all the active replica DB
-func (dbResolver *sqlDB) ReplicaDBs() []*sql.DB {
-	return dbResolver.replicas
+func (database *sqlDB) ReplicaDBs() []*sql.DB {
+	return database.replicas
 }
 
 // Close closes all physical databases concurrently, releasing any open resources.
-func (dbResolver *sqlDB) Close() error {
-	return doParallely(dbResolver.totalConnection, func(i int) (err error) {
-		if i < len(dbResolver.primarydbs) {
-			return dbResolver.primarydbs[i].Close()
+func (database *sqlDB) Close() error {
+	return doParallely(database.totalConnection, func(i int) (err error) {
+		if i < len(database.primaries) {
+			return database.primaries[i].Close()
 		}
 
-		roIndex := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndex].Close()
+		roIndex := i - len(database.primaries)
+		return database.replicas[roIndex].Close()
 	})
 }
 
 // Driver returns the physical database's underlying driver.
-func (dbResolver *sqlDB) Driver() driver.Driver {
-	return dbResolver.ReadWrite().Driver()
+func (database *sqlDB) Driver() driver.Driver {
+	return database.ReadWrite().Driver()
 }
 
 // Begin starts a transaction on the RW-database. The isolation level is dependent on the driver.
-func (dbResolver *sqlDB) Begin() (*sql.Tx, error) {
-	return dbResolver.ReadWrite().Begin()
+func (database *sqlDB) Begin() (*sql.Tx, error) {
+	return database.ReadWrite().Begin()
 }
 
 // BeginTx starts a transaction with the provided context on the RW-database.
@@ -140,65 +140,65 @@ func (dbResolver *sqlDB) Begin() (*sql.Tx, error) {
 // The provided TxOptions is optional and may be nil if defaults should be used.
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
-func (dbResolver *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
-	return dbResolver.ReadWrite().BeginTx(ctx, opts)
+func (database *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return database.ReadWrite().BeginTx(ctx, opts)
 }
 
 // Exec executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
-func (dbResolver *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return dbResolver.ReadWrite().Exec(query, args...)
+func (database *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return database.ReadWrite().Exec(query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
-func (dbResolver *sqlDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return dbResolver.ReadWrite().ExecContext(ctx, query, args...)
+func (database *sqlDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return database.ReadWrite().ExecContext(ctx, query, args...)
 }
 
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
-func (dbResolver *sqlDB) Ping() error {
-	return doParallely(dbResolver.totalConnection, func(i int) error {
-		if i < len(dbResolver.primarydbs) {
-			return dbResolver.primarydbs[i].Ping()
+func (database *sqlDB) Ping() error {
+	return doParallely(database.totalConnection, func(i int) error {
+		if i < len(database.primaries) {
+			return database.primaries[i].Ping()
 		}
 
-		roIndex := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndex].Ping()
+		roIndex := i - len(database.primaries)
+		return database.replicas[roIndex].Ping()
 	})
 }
 
 // PingContext verifies if a connection to each physical database is still
 // alive, establishing a connection if necessary.
-func (dbResolver *sqlDB) PingContext(ctx context.Context) error {
-	return doParallely(dbResolver.totalConnection, func(i int) error {
-		if i < len(dbResolver.primarydbs) {
-			return dbResolver.primarydbs[i].PingContext(ctx)
+func (database *sqlDB) PingContext(ctx context.Context) error {
+	return doParallely(database.totalConnection, func(i int) error {
+		if i < len(database.primaries) {
+			return database.primaries[i].PingContext(ctx)
 		}
-		roIndex := i - len(dbResolver.primarydbs)
-		return dbResolver.replicas[roIndex].PingContext(ctx)
+		roIndex := i - len(database.primaries)
+		return database.replicas[roIndex].PingContext(ctx)
 	})
 }
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (dbResolver *sqlDB) Prepare(query string) (Stmt, error) {
+func (database *sqlDB) Prepare(query string) (Stmt, error) {
 	stmt := &stmt{
-		db: dbResolver,
+		db: database,
 	}
-	roStmts := make([]*sql.Stmt, len(dbResolver.replicas))
-	primaryStmts := make([]*sql.Stmt, len(dbResolver.primarydbs))
-	err := doParallely(dbResolver.totalConnection, func(i int) (err error) {
-		if i < len(dbResolver.primarydbs) {
-			primaryStmts[i], err = dbResolver.primarydbs[i].Prepare(query)
+	roStmts := make([]*sql.Stmt, len(database.replicas))
+	primaryStmts := make([]*sql.Stmt, len(database.primaries))
+	err := doParallely(database.totalConnection, func(i int) (err error) {
+		if i < len(database.primaries) {
+			primaryStmts[i], err = database.primaries[i].Prepare(query)
 			return err
 		}
 
-		roIndex := i - len(dbResolver.primarydbs)
-		roStmts[roIndex], err = dbResolver.replicas[roIndex].Prepare(query)
+		roIndex := i - len(database.primaries)
+		roStmts[roIndex], err = database.replicas[roIndex].Prepare(query)
 		return err
 	})
 
@@ -216,20 +216,20 @@ func (dbResolver *sqlDB) Prepare(query string) (Stmt, error) {
 //
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
-func (dbResolver *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
+func (database *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 	stmt := &stmt{
-		db: dbResolver,
+		db: database,
 	}
-	roStmts := make([]*sql.Stmt, len(dbResolver.replicas))
-	primaryStmts := make([]*sql.Stmt, len(dbResolver.primarydbs))
-	err := doParallely(dbResolver.totalConnection, func(i int) (err error) {
-		if i < len(dbResolver.primarydbs) {
-			primaryStmts[i], err = dbResolver.primarydbs[i].PrepareContext(ctx, query)
+	roStmts := make([]*sql.Stmt, len(database.replicas))
+	primaryStmts := make([]*sql.Stmt, len(database.primaries))
+	err := doParallely(database.totalConnection, func(i int) (err error) {
+		if i < len(database.primaries) {
+			primaryStmts[i], err = database.primaries[i].PrepareContext(ctx, query)
 			return err
 		}
 
-		roIndex := i - len(dbResolver.primarydbs)
-		roStmts[roIndex], err = dbResolver.replicas[roIndex].PrepareContext(ctx, query)
+		roIndex := i - len(database.primaries)
+		roStmts[roIndex], err = database.replicas[roIndex].PrepareContext(ctx, query)
 		return err
 	})
 
@@ -245,31 +245,31 @@ func (dbResolver *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
 // Query uses a radonly db as the physical db.
-func (dbResolver *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return dbResolver.ReadOnly().Query(query, args...)
+func (database *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return database.ReadOnly().Query(query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
 // QueryContext uses a radonly db as the physical db.
-func (dbResolver *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return dbResolver.ReadOnly().QueryContext(ctx, query, args...)
+func (database *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return database.ReadOnly().QueryContext(ctx, query, args...)
 }
 
 // QueryRow executes a query that is expected to return at most one row.
 // QueryRow always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
 // QueryRow uses a radonly db as the physical db.
-func (dbResolver *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
-	return dbResolver.ReadOnly().QueryRow(query, args...)
+func (database *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
+	return database.ReadOnly().QueryRow(query, args...)
 }
 
 // QueryRowContext executes a query that is expected to return at most one row.
 // QueryRowContext always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
 // QueryRowContext uses a radonly db as the physical db.
-func (dbResolver *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return dbResolver.ReadOnly().QueryRowContext(ctx, query, args...)
+func (database *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return database.ReadOnly().QueryRowContext(ctx, query, args...)
 }
 
 // SetMaxIdleConns sets the maximum number of connections in the idle
@@ -277,13 +277,13 @@ func (dbResolver *sqlDB) QueryRowContext(ctx context.Context, query string, args
 // If MaxOpenConns is greater than 0 but less than the new MaxIdleConns then the
 // new MaxIdleConns will be reduced to match the MaxOpenConns limit
 // If n <= 0, no idle connections are retained.
-func (dbResolver *sqlDB) SetMaxIdleConns(n int) {
-	for i := range dbResolver.primarydbs {
-		dbResolver.primarydbs[i].SetMaxIdleConns(n)
+func (database *sqlDB) SetMaxIdleConns(n int) {
+	for i := range database.primaries {
+		database.primaries[i].SetMaxIdleConns(n)
 	}
 
-	for i := range dbResolver.replicas {
-		dbResolver.replicas[i].SetMaxIdleConns(n)
+	for i := range database.replicas {
+		database.replicas[i].SetMaxIdleConns(n)
 	}
 }
 
@@ -293,75 +293,75 @@ func (dbResolver *sqlDB) SetMaxIdleConns(n int) {
 // is less than MaxIdleConns, then MaxIdleConns will be reduced to match
 // the new MaxOpenConns limit. If n <= 0, then there is no limit on the number
 // of open connections. The default is 0 (unlimited).
-func (dbResolver *sqlDB) SetMaxOpenConns(n int) {
-	for i := range dbResolver.primarydbs {
-		dbResolver.primarydbs[i].SetMaxOpenConns(n)
+func (database *sqlDB) SetMaxOpenConns(n int) {
+	for i := range database.primaries {
+		database.primaries[i].SetMaxOpenConns(n)
 	}
-	for i := range dbResolver.replicas {
-		dbResolver.replicas[i].SetMaxOpenConns(n)
+	for i := range database.replicas {
+		database.replicas[i].SetMaxOpenConns(n)
 	}
 }
 
 // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 // Expired connections may be closed lazily before reuse.
 // If d <= 0, connections are reused forever.
-func (dbResolver *sqlDB) SetConnMaxLifetime(d time.Duration) {
-	for i := range dbResolver.primarydbs {
-		dbResolver.primarydbs[i].SetConnMaxLifetime(d)
+func (database *sqlDB) SetConnMaxLifetime(d time.Duration) {
+	for i := range database.primaries {
+		database.primaries[i].SetConnMaxLifetime(d)
 	}
-	for i := range dbResolver.replicas {
-		dbResolver.replicas[i].SetConnMaxLifetime(d)
+	for i := range database.replicas {
+		database.replicas[i].SetConnMaxLifetime(d)
 	}
 }
 
 // SetConnMaxIdleTime sets the maximum amount of time a connection may be idle.
 // Expired connections may be closed lazily before reuse.
 // If d <= 0, connections are not closed due to a connection's idle time.
-func (dbResolver *sqlDB) SetConnMaxIdleTime(d time.Duration) {
-	for i := range dbResolver.primarydbs {
-		dbResolver.primarydbs[i].SetConnMaxIdleTime(d)
+func (database *sqlDB) SetConnMaxIdleTime(d time.Duration) {
+	for i := range database.primaries {
+		database.primaries[i].SetConnMaxIdleTime(d)
 	}
 
-	for i := range dbResolver.replicas {
-		dbResolver.replicas[i].SetConnMaxIdleTime(d)
+	for i := range database.replicas {
+		database.replicas[i].SetConnMaxIdleTime(d)
 	}
 }
 
 // ReadOnly returns the readonly database
-func (dbResolver *sqlDB) ReadOnly() *sql.DB {
-	if dbResolver.totalConnection == len(dbResolver.primarydbs) {
-		return dbResolver.primarydbs[dbResolver.rounRobinRW(len(dbResolver.primarydbs))]
+func (database *sqlDB) ReadOnly() *sql.DB {
+	if database.totalConnection == len(database.primaries) {
+		return database.primaries[database.rounRobinRW(len(database.primaries))]
 	}
 
-	return dbResolver.replicas[dbResolver.rounRobinRO(len(dbResolver.replicas))]
+	return database.replicas[database.rounRobinRO(len(database.replicas))]
 }
 
 // ReadWrite returns the primary database
-func (dbResolver *sqlDB) ReadWrite() *sql.DB {
-	return dbResolver.primarydbs[dbResolver.rounRobinRW(len(dbResolver.primarydbs))]
+func (database *sqlDB) ReadWrite() *sql.DB {
+	return database.primaries[database.rounRobinRW(len(database.primaries))]
 }
 
-func (dbResolver *sqlDB) rounRobinRO(n int) int {
+func (database *sqlDB) rounRobinRO(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int((atomic.AddUint64(&dbResolver.replicasCount, 1) % uint64(n)))
+	return int((atomic.AddUint64(&database.replicasCount, 1) % uint64(n)))
 }
 
-func (dbResolver *sqlDB) rounRobinRW(n int) int {
+func (database *sqlDB) rounRobinRW(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int((atomic.AddUint64(&dbResolver.primarydbsCount, 1) % uint64(n)))
+	return int((atomic.AddUint64(&database.primariesCount, 1) % uint64(n)))
 }
 
 // Conn returns a single connection by either opening a new connection or returning an existing connection from the
 // connection pool of the first primary db.
-func (dbResolver *sqlDB) Conn(ctx context.Context) (*sql.Conn, error) {
-	return dbResolver.primarydbs[0].Conn(ctx)
+func (database *sqlDB) Conn(ctx context.Context) (*sql.Conn, error) {
+	return database.primaries[0].Conn(ctx)
 }
 
 // Stats returns database statistics for the first primary db
-func (dbResolver *sqlDB) Stats() sql.DBStats {
-	return dbResolver.primarydbs[0].Stats()
+func (database *sqlDB) Stats() sql.DBStats {
+	return database.primaries[0].Stats()
 }
