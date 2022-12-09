@@ -20,7 +20,7 @@ func TestOpen(t *testing.T) {
 	}
 
 	if expected := len(db.PrimaryDBs()); expected == 0 {
-		t.Error("No Primary DB is alive")
+		t.Error("No Primary DB is ready")
 	}
 
 	if want, got := 2, len(db.ReplicaDBs()); want != got {

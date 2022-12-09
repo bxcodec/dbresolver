@@ -17,7 +17,7 @@ type DB interface {
 	Begin() (*sql.Tx, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	Close() error
-	// Conn(ctx context.Context) (*sql.Conn, error) // not relevant for multi connection DB
+	Conn(ctx context.Context) (*sql.Conn, error) // db stats for only one of the primary db
 	Driver() driver.Driver
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -33,9 +33,9 @@ type DB interface {
 	SetConnMaxLifetime(d time.Duration)
 	SetMaxIdleConns(n int)
 	SetMaxOpenConns(n int)
-	// Stats() sql.DBStats // not relevant for multi connection DB
 	PrimaryDBs() []*sql.DB
 	ReplicaDBs() []*sql.DB
+	Stats() sql.DBStats // db stats for only one of the primary db
 }
 
 // sqlDB is a logical database with multiple underlying physical databases
@@ -353,4 +353,15 @@ func (dbResolver *sqlDB) rounRobinRW(n int) int {
 		return 0
 	}
 	return int((atomic.AddUint64(&dbResolver.primarydbsCount, 1) % uint64(n)))
+}
+
+// Conn returns a single connection by either opening a new connection or returning an existing connection from the
+// connection pool of the first primary db.
+func (dbResolver *sqlDB) Conn(ctx context.Context) (*sql.Conn, error) {
+	return dbResolver.primarydbs[0].Conn(ctx)
+}
+
+// Stats returns database statistics for the first primary db
+func (dbResolver *sqlDB) Stats() sql.DBStats {
+	return dbResolver.primarydbs[0].Stats()
 }
