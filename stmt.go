@@ -27,7 +27,7 @@ type stmt struct {
 // Close closes the statement by concurrently closing all underlying
 // statements concurrently, returning the first non nil error.
 func (s *stmt) Close() error {
-	return doParallely(s.db.totalConnection, func(i int) error {
+	return doParallely(s.db.totalConnections, func(i int) error {
 		if i < len(s.primaryStmts) {
 			return s.primaryStmts[i].Close()
 		}

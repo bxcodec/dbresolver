@@ -10,9 +10,9 @@ func WrapDBs(dbs ...*sql.DB) DB {
 		panic("required primary connection")
 	}
 	return &sqlDB{
-		primaries:       dbs[:1],
-		replicas:        dbs[1:],
-		totalConnection: len(dbs),
+		primaries:        dbs[:1],
+		replicas:         dbs[1:],
+		totalConnections: len(dbs),
 	}
 }
 
@@ -20,13 +20,16 @@ func WrapDBs(dbs ...*sql.DB) DB {
 // first DB array connection is the primary-writer connection (RW),
 // the second DB array will be used for RO connection
 func WrapDBsMultiPrimary(primaryDBs, roDBs []*sql.DB) DB {
-	if len(primaryDBs)+len(roDBs) == 0 {
+
+	totalConnections := len(primaryDBs) + len(roDBs)
+
+	if totalConnections == 0 {
 		panic("required primary connection")
 	}
 
 	return &sqlDB{
-		primaries:       primaryDBs,
-		replicas:        roDBs,
-		totalConnection: len(primaryDBs) + len(roDBs),
+		primaries:        primaryDBs,
+		replicas:         roDBs,
+		totalConnections: totalConnections,
 	}
 }

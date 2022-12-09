@@ -42,11 +42,11 @@ type DB interface {
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) database.
 // Reads and writes are automatically directed to the correct db connection
 type sqlDB struct {
-	primaries       []*sql.DB
-	replicas        []*sql.DB
-	totalConnection int
-	replicasCount   uint64 // Monotonically incrementing counter on each query
-	primariesCount  uint64 // Monotonically incrementing counter on each query
+	primaries        []*sql.DB
+	replicas         []*sql.DB
+	totalConnections int
+	replicasCount    uint64 // Monotonically incrementing counter on each query
+	primariesCount   uint64 // Monotonically incrementing counter on each query
 }
 
 // Open concurrently opens each underlying db connection
@@ -59,8 +59,8 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 		primaries: make([]*sql.DB, 1),
 	}
 
-	database.totalConnection = len(conns)
-	err = doParallely(database.totalConnection, func(i int) (err error) {
+	database.totalConnections = len(conns)
+	err = doParallely(database.totalConnections, func(i int) (err error) {
 		if i == 0 {
 			database.primaries[0], err = sql.Open(driverName, conns[i])
 			return err
@@ -89,8 +89,8 @@ func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceName
 		primaries: make([]*sql.DB, len(primaryConns)),
 	}
 
-	database.totalConnection = len(primaryConns) + len(readOnlyConns)
-	err = doParallely(database.totalConnection, func(i int) (err error) {
+	database.totalConnections = len(primaryConns) + len(readOnlyConns)
+	err = doParallely(database.totalConnections, func(i int) (err error) {
 		if i < len(primaryConns) {
 			database.primaries[0], err = sql.Open(driverName, primaryConns[i])
 			return err
@@ -115,7 +115,7 @@ func (database *sqlDB) ReplicaDBs() []*sql.DB {
 
 // Close closes all physical databases concurrently, releasing any open resources.
 func (database *sqlDB) Close() error {
-	return doParallely(database.totalConnection, func(i int) (err error) {
+	return doParallely(database.totalConnections, func(i int) (err error) {
 		if i < len(database.primaries) {
 			return database.primaries[i].Close()
 		}
@@ -161,7 +161,7 @@ func (database *sqlDB) ExecContext(ctx context.Context, query string, args ...in
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (database *sqlDB) Ping() error {
-	return doParallely(database.totalConnection, func(i int) error {
+	return doParallely(database.totalConnections, func(i int) error {
 		if i < len(database.primaries) {
 			return database.primaries[i].Ping()
 		}
@@ -174,7 +174,7 @@ func (database *sqlDB) Ping() error {
 // PingContext verifies if a connection to each physical database is still
 // alive, establishing a connection if necessary.
 func (database *sqlDB) PingContext(ctx context.Context) error {
-	return doParallely(database.totalConnection, func(i int) error {
+	return doParallely(database.totalConnections, func(i int) error {
 		if i < len(database.primaries) {
 			return database.primaries[i].PingContext(ctx)
 		}
@@ -191,7 +191,7 @@ func (database *sqlDB) Prepare(query string) (Stmt, error) {
 	}
 	roStmts := make([]*sql.Stmt, len(database.replicas))
 	primaryStmts := make([]*sql.Stmt, len(database.primaries))
-	err := doParallely(database.totalConnection, func(i int) (err error) {
+	err := doParallely(database.totalConnections, func(i int) (err error) {
 		if i < len(database.primaries) {
 			primaryStmts[i], err = database.primaries[i].Prepare(query)
 			return err
@@ -222,7 +222,7 @@ func (database *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, 
 	}
 	roStmts := make([]*sql.Stmt, len(database.replicas))
 	primaryStmts := make([]*sql.Stmt, len(database.primaries))
-	err := doParallely(database.totalConnection, func(i int) (err error) {
+	err := doParallely(database.totalConnections, func(i int) (err error) {
 		if i < len(database.primaries) {
 			primaryStmts[i], err = database.primaries[i].PrepareContext(ctx, query)
 			return err
@@ -329,7 +329,7 @@ func (database *sqlDB) SetConnMaxIdleTime(d time.Duration) {
 
 // ReadOnly returns the readonly database
 func (database *sqlDB) ReadOnly() *sql.DB {
-	if database.totalConnection == len(database.primaries) {
+	if database.totalConnections == len(database.primaries) {
 		return database.primaries[database.rounRobinRW(len(database.primaries))]
 	}
 
