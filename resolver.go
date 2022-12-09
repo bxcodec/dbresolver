@@ -20,7 +20,7 @@ func WrapDBs(dbs ...*sql.DB) DB {
 // first DB array connection is the primary-writer connection (RW),
 // the second DB array will be used for RO connection
 func WrapDBsMultiPrimary(primaryDBs, roDBs []*sql.DB) DB {
-	if len(primaryDBs) == 0 {
+	if len(primaryDBs)+len(roDBs) == 0 {
 		panic("required primary connection")
 	}
 
