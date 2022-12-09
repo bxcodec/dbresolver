@@ -345,14 +345,14 @@ func (database *sqlDB) rounRobinRO(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int((atomic.AddUint64(&database.replicasCount, 1) % uint64(n)))
+	return int(atomic.AddUint64(&database.replicasCount, 1) % uint64(n))
 }
 
 func (database *sqlDB) rounRobinRW(n int) int {
 	if n <= 1 {
 		return 0
 	}
-	return int((atomic.AddUint64(&database.primariesCount, 1) % uint64(n)))
+	return int(atomic.AddUint64(&database.primariesCount, 1) % uint64(n))
 }
 
 // Conn returns a single connection by either opening a new connection or returning an existing connection from the
