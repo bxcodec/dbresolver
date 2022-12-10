@@ -48,10 +48,13 @@ func (lb RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for RoundRobin LB
 func (lb *RoundRobinLoadBalancer[T]) Resolve(dbs []T) T {
-	n := len(dbs)
-	if n == 1 {
-		return dbs[0]
-	}
-	idx := int((atomic.AddUint64(&lb.counter, 1) % uint64(n)))
+	idx := lb.roundRobin(len(dbs))
 	return dbs[idx]
+}
+
+func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
+	if n <= 1 {
+		return 0
+	}
+	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
