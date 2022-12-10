@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ExampleWrapDBs() {
+func ExampleNewResolver() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
