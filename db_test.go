@@ -10,17 +10,23 @@ import (
 
 func TestMultiWrite(t *testing.T) {
 
-	testCases := [][2]int{
+	testCases := [][2]uint{
+		{2, 0},
 		{2, 1},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
 		{3, 6},
 		{5, 6},
 		{7, 20},
+		{10, 10},
 	}
 
 	retrieveTestCase := func() (int, int) {
 		testCase := testCases[0]
 		testCases = testCases[1:]
-		return testCase[0], testCase[1]
+		return int(testCase[0]), int(testCase[1])
 	}
 
 BEGIN:
