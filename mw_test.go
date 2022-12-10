@@ -90,7 +90,7 @@ func TestMultiWrite(t *testing.T) {
 
 	t.Run("replica dbs", func(t *testing.T) {
 
-		for i := 0; i < noOfReplicas*6; i++ {
+		for i := 0; i < noOfReplicas*5; i++ {
 
 			robin := resolver.loadBalancer.Predict(noOfReplicas)
 			mock := mockReplicas[robin]
@@ -117,10 +117,9 @@ func TestMultiWrite(t *testing.T) {
 				mock.ExpectQuery(query)
 				resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
-
-				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
-				}
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
 		}
 	})
