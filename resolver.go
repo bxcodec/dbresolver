@@ -3,7 +3,7 @@ package dbresolver
 // Resolver will resolve all the passed connection
 // first DB connection is the primary-writer connection (RW),
 // the rest connection will be used for RO connection
-func Resolver(opts ...OptionFunc) DB {
+func NewResolver(opts ...OptionFunc) DB {
 	opt := defaultOption()
 	for _, optFunc := range opts {
 		optFunc(opt)

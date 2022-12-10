@@ -60,10 +60,12 @@ func Open(driverName, dataSourceNames string) (res DB, err error) {
 	if len(conns) == 0 {
 		return nil, errors.New("invalid data source name")
 	}
-
+	opt := defaultOption()
 	db := &sqlDB{
-		replicas:  make([]*sql.DB, len(conns)-1),
-		primaries: make([]*sql.DB, 1),
+		replicas:         make([]*sql.DB, len(conns)-1),
+		primaries:        make([]*sql.DB, 1),
+		loadBalancer:     opt.DBLB,
+		stmtLoadBalancer: opt.StmtLB,
 	}
 
 	db.totalConnection = len(conns)
@@ -96,9 +98,12 @@ func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceName
 		return nil, errors.New("require primary data source name")
 	}
 
+	opt := defaultOption()
 	db := &sqlDB{
-		replicas:  make([]*sql.DB, len(readOnlyConns)),
-		primaries: make([]*sql.DB, len(primaryConns)),
+		replicas:         make([]*sql.DB, len(readOnlyConns)),
+		primaries:        make([]*sql.DB, len(primaryConns)),
+		loadBalancer:     opt.DBLB,
+		stmtLoadBalancer: opt.StmtLB,
 	}
 
 	db.totalConnection = len(primaryConns) + len(readOnlyConns)
