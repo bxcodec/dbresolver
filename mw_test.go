@@ -3,7 +3,6 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"sync/atomic"
 	"testing"
 )
 
@@ -51,12 +50,12 @@ func TestMultiWrite(t *testing.T) {
 		mockReplicas[i] = mock
 	}
 
-	resolver := WrapDBsMultiPrimary(primaries, replicas).(*sqlDB)
+	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
 
 		for i := 0; i < noOfPrimaries*5; i++ {
-			robin := getRobin(resolver.primariesCount, noOfPrimaries)
+			robin := resolver.loadBalancer.Predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
 			switch i % 6 {
@@ -97,8 +96,9 @@ func TestMultiWrite(t *testing.T) {
 	t.Run("replica dbs", func(t *testing.T) {
 
 		for i := 0; i < noOfReplicas*5; i++ {
-			robin := getRobin(resolver.replicasCount, noOfReplicas)
-			mock := mockReplicas[robin]
+
+			robin := resolver.loadBalancer.Predict(noOfReplicas)
+			mock := mockPimaries[robin]
 
 			switch i % 6 {
 
@@ -138,10 +138,5 @@ func TestMultiWrite(t *testing.T) {
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
 	db, mock, err = sqlmock.New(sqlmock.MonitorPingsOption(true))
-	return
-}
-
-func getRobin(curCount uint64, totalReplicas int) (robin int) {
-	robin = int(atomic.AddUint64(&curCount, 1) % uint64(totalReplicas))
 	return
 }
