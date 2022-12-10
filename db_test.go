@@ -11,6 +11,10 @@ import (
 func TestMultiWrite(t *testing.T) {
 
 	testCases := [][2]uint{
+		{1, 0},
+		{1, 1},
+		{1, 2},
+		{1, 10},
 		{2, 0},
 		{2, 1},
 		{3, 0},
@@ -36,8 +40,6 @@ BEGIN:
 	}
 
 	noOfPrimaries, noOfReplicas := retrieveTestCase()
-
-	t.Log(fmt.Sprintf("%dP%dR", noOfPrimaries, noOfReplicas))
 
 	primaries := make([]*sql.DB, noOfPrimaries)
 	replicas := make([]*sql.DB, noOfReplicas)
@@ -227,8 +229,10 @@ BEGIN:
 				}
 			}(mock)
 		}
-
 		resolver.Close()
+
+		t.Log(fmt.Sprintf("%dP%dR", noOfPrimaries, noOfReplicas))
+
 	})
 
 	goto BEGIN
