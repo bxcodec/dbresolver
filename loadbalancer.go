@@ -7,22 +7,27 @@ import (
 	"time"
 )
 
-type DBConn interface {
+// DBOpsType is the generic type for DB and Stmt operation
+type DBOpsType interface {
 	*sql.DB | *sql.Stmt
 }
 
-type LoadBalancer[T DBConn] interface {
+// LoadBalancer define the load balancer contract
+type LoadBalancer[T DBOpsType] interface {
 	Resolve([]T) T
 	Name() LoadBalancerPolicy
 }
 
-type RandomLoadBalancer[T DBConn] struct {
+// RandomLoadBalancer represent for Random LB policy
+type RandomLoadBalancer[T DBOpsType] struct {
 }
 
+// RandomLoadBalancer return the LB policy name
 func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RandomLB
 }
 
+// Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	rand.Seed(time.Now().UnixNano())
 	max := len(dbs) - 1
@@ -31,14 +36,17 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	return dbs[idx]
 }
 
-type RoundRobinLoadBalancer[T DBConn] struct {
+// RoundRobinLoadBalancer represent for RoundRobin LB policy
+type RoundRobinLoadBalancer[T DBOpsType] struct {
 	counter uint64 // Monotonically incrementing counter on every call
 }
 
+// RandomLoadBalancer return the LB policy name
 func (lb RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RoundRobinLB
 }
 
+// Resolve return the resolved option for RoundRobin LB
 func (lb *RoundRobinLoadBalancer[T]) Resolve(dbs []T) T {
 	n := len(dbs)
 	if n == 1 {

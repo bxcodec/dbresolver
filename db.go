@@ -38,8 +38,11 @@ type DB interface {
 	Stats() sql.DBStats // db stats for only one of the primary db
 }
 
-type DBLoadBalancer LoadBalancer[*sql.DB]
-type StmtLoadBalancer LoadBalancer[*sql.Stmt]
+// Supported LoadBalancer
+type (
+	DBLoadBalancer   LoadBalancer[*sql.DB]
+	StmtLoadBalancer LoadBalancer[*sql.Stmt]
+)
 
 // sqlDB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) db.
