@@ -21,15 +21,13 @@ func WrapDBs(dbs ...*sql.DB) DB {
 // the second DB array will be used for RO connection
 func WrapDBsMultiPrimary(primaryDBs, roDBs []*sql.DB) DB {
 
-	totalConnections := len(primaryDBs) + len(roDBs)
-
-	if totalConnections == 0 {
+	if len(primaryDBs) == 0 {
 		panic("required primary connection")
 	}
 
 	return &sqlDB{
 		primaries:        primaryDBs,
 		replicas:         roDBs,
-		totalConnections: totalConnections,
+		totalConnections: len(primaryDBs) + len(roDBs),
 	}
 }
