@@ -25,6 +25,7 @@ func TestMultiWrite(t *testing.T) {
 		{5, 6},
 		{7, 20},
 		{10, 10},
+		{10, 20},
 	}
 
 	retrieveTestCase := func() (int, int) {
