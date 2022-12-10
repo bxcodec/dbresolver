@@ -7,19 +7,19 @@ import (
 	"time"
 )
 
-// DBOpsType is the generic type for DB and Stmt operation
-type DBOpsType interface {
+// DBConnection is the generic type for DB and Stmt operation
+type DBConnection interface {
 	*sql.DB | *sql.Stmt
 }
 
 // LoadBalancer define the load balancer contract
-type LoadBalancer[T DBOpsType] interface {
+type LoadBalancer[T DBConnection] interface {
 	Resolve([]T) T
 	Name() LoadBalancerPolicy
 }
 
 // RandomLoadBalancer represent for Random LB policy
-type RandomLoadBalancer[T DBOpsType] struct {
+type RandomLoadBalancer[T DBConnection] struct {
 }
 
 // RandomLoadBalancer return the LB policy name
@@ -37,7 +37,7 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 }
 
 // RoundRobinLoadBalancer represent for RoundRobin LB policy
-type RoundRobinLoadBalancer[T DBOpsType] struct {
+type RoundRobinLoadBalancer[T DBConnection] struct {
 	counter uint64 // Monotonically incrementing counter on every call
 }
 
