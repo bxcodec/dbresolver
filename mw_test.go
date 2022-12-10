@@ -134,6 +134,41 @@ func TestMultiWrite(t *testing.T) {
 		}
 	})
 
+	t.Run("prepare", func(t *testing.T) {
+		query := "select 1"
+
+		for _, mock := range mockPimaries {
+			mock.ExpectPrepare(query)
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectPrepare(query)
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+
+		stmt, err := resolver.Prepare(query)
+		if err != nil {
+			t.Error("prepare failed")
+			return
+		}
+
+		robin := resolver.loadBalancer.Predict(noOfPrimaries)
+		mock := mockPimaries[robin]
+
+		mock.ExpectExec(query)
+
+		stmt.Exec()
+
+	})
+
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
