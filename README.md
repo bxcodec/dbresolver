@@ -40,14 +40,14 @@ Read more for the explanation on this [blog post](https://betterprogramming.pub/
 ## Support
 
 You can file an [Issue](https://github.com/bxcodec/dbresolver/issues/new).
-See documentation in [Go.Dev](https://pkg.go.dev/github.com/bxcodec/dbresolver?tab=doc)
+See documentation in [Go.Dev](https://pkg.go.dev/github.com/bxcodec/dbresolver/v2?tab=doc)
 
 ## Getting Started
 
 #### Download
 
 ```shell
-go get -u github.com/bxcodec/dbresolver
+go get -u github.com/bxcodec/dbresolver/v2
 ```
 
 # Example
