@@ -12,4 +12,7 @@ require (
 	go.uber.org/multierr v1.8.0
 )
 
-require go.uber.org/atomic v1.10.0 // indirect
+require (
+	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
+)
