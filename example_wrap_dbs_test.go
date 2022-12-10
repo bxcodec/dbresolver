@@ -47,6 +47,7 @@ func ExampleNew() {
 		dbresolver.WithReplicaDBs(dbReadOnlyReplica),
 		dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))
 
+	defer connectionDB.Close()
 	// now you can use the connection for all DB operation
 	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
 	if err != nil {

@@ -163,15 +163,45 @@ func TestMultiWrite(t *testing.T) {
 		for _, mock := range mockPimaries {
 			mock.ExpectPing()
 			mock.ExpectPing()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
 		}
 		for _, mock := range mockReplicas {
 			mock.ExpectPing()
 			mock.ExpectPing()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
 		}
 
 		resolver.Ping()
 		resolver.PingContext(context.TODO())
-		t.Log("ping")
+	})
+
+	t.Run("close", func(t *testing.T) {
+		for _, mock := range mockPimaries {
+			mock.ExpectClose()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectClose()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+
+		resolver.Close()
 
 	})
 

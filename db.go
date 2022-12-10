@@ -59,40 +59,6 @@ type sqlDB struct {
 	stmtLoadBalancer StmtLoadBalancer
 }
 
-// Open concurrently opens each underlying db connection
-// dataSourceNames must be a semi-comma separated list of DSNs with the first
-// one being used as the RW-database(primary) and the rest as RO databases (replicas).
-func Open(driverName, dataSourceNames string) (res DB, err error) {
-	conns := strings.Split(dataSourceNames, ";")
-	if len(conns) == 0 {
-		return nil, errors.New("invalid data source name")
-	}
-	opt := defaultOption()
-	db := &sqlDB{
-		replicas:         make([]*sql.DB, len(conns)-1),
-		primaries:        make([]*sql.DB, 1),
-		loadBalancer:     opt.DBLB,
-		stmtLoadBalancer: opt.StmtLB,
-	}
-
-	db.totalConnection = len(conns)
-	err = doParallely(db.totalConnection, func(i int) (err error) {
-		if i == 0 {
-			db.primaries[0], err = sql.Open(driverName, conns[i])
-			return err
-		}
-		var roDB *sql.DB
-		roDB, err = sql.Open(driverName, conns[i])
-		if err != nil {
-			return
-		}
-		db.replicas[i-1] = roDB
-		return err
-	})
-
-	return db, err
-}
-
 // OpenMultiPrimary concurrently opens each underlying db connection
 // both primaryDataSourceNames and readOnlyDataSourceNames must be a semi-comma separated list of DSNs
 // primaryDataSourceNames will be used as the RW-database(primary)
@@ -139,14 +105,13 @@ func (db *sqlDB) ReplicaDBs() []*sql.DB {
 
 // Close closes all physical databases concurrently, releasing any open resources.
 func (db *sqlDB) Close() error {
-	return doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			return db.primaries[i].Close()
-		}
-
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].Close()
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].Close()
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].Close()
+	})
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // Driver returns the physical database's underlying driver.
