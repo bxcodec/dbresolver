@@ -171,7 +171,8 @@ func TestMultiWrite(t *testing.T) {
 		}
 
 		resolver.Ping()
-		resolver.PingContext()
+		resolver.PingContext(context.TODO())
+		t.Log("ping")
 
 	})
 
