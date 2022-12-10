@@ -18,9 +18,9 @@ type Stmt interface {
 }
 
 type stmt struct {
-	db *DBImpl
-
-	primaryStmt  *sql.Stmt
+	db           *sqlDB
+	loadBalancer StmtLoadBalancer
+	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
 }
 
@@ -28,11 +28,12 @@ type stmt struct {
 // statements concurrently, returning the first non nil error.
 func (s *stmt) Close() error {
 	return doParallely(s.db.totalConnection, func(i int) error {
-		if i == 0 {
-			return s.primaryStmt.Close()
+		if i < len(s.primaryStmts) {
+			return s.primaryStmts[i].Close()
 		}
 
-		return s.replicaStmts[i-1].Close()
+		roIndex := i - len(s.primaryStmts)
+		return s.replicaStmts[roIndex].Close()
 	})
 }
 
@@ -86,13 +87,14 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 
 // ROStmt return the replica statement
 func (s *stmt) ROStmt() *sql.Stmt {
-	if len(s.replicaStmts) == 0 {
-		return s.primaryStmt
+	totalStmtsConn := len(s.replicaStmts) + len(s.primaryStmts)
+	if totalStmtsConn == len(s.primaryStmts) {
+		return s.loadBalancer.Resolve(s.primaryStmts)
 	}
-	return s.replicaStmts[s.db.rounRobin(len(s.replicaStmts))]
+	return s.loadBalancer.Resolve(s.replicaStmts)
 }
 
 // RWStmt return the primary statement
 func (s *stmt) RWStmt() *sql.Stmt {
-	return s.primaryStmt
+	return s.loadBalancer.Resolve(s.primaryStmts)
 }

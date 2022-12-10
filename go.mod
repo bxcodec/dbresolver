@@ -1,4 +1,4 @@
-module github.com/bxcodec/dbresolver
+module github.com/bxcodec/dbresolver/v2
 
 go 1.19
 

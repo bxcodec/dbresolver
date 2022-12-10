@@ -1,17 +1,22 @@
 package dbresolver
 
-import "database/sql"
-
-// WrapDBs will wrap all DB connection
+// Resolver will resolve all the passed connection
 // first DB connection is the primary-writer connection (RW),
 // the rest connection will be used for RO connection
-func WrapDBs(dbs ...*sql.DB) DB {
-	if len(dbs) == 0 {
-		panic("required primary connection")
+func NewResolver(opts ...OptionFunc) DB {
+	opt := defaultOption()
+	for _, optFunc := range opts {
+		optFunc(opt)
 	}
-	return &DBImpl{
-		primarydb:       dbs[0],
-		replicas:        dbs[1:],
-		totalConnection: len(dbs),
+
+	if len(opt.PrimaryDBs) == 0 {
+		panic("required primary db connection, set the primary db " +
+			"connection with dbresolver.Resolver(dbresolver.WithPrimaryDBs(primaryDB))")
+	}
+	return &sqlDB{
+		primaries:        opt.PrimaryDBs,
+		replicas:         opt.ReplicaDBs,
+		loadBalancer:     opt.DBLB,
+		stmtLoadBalancer: opt.StmtLB,
 	}
 }
