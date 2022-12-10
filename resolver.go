@@ -16,7 +16,7 @@ func Resolver(opts ...OptionFunc) DB {
 	return &sqlDB{
 		primaries:        opt.PrimaryDBs,
 		replicas:         opt.ReplicaDBs,
-		dbLoadBalancer:   opt.DBLB,
+		loadBalancer:     opt.DBLB,
 		stmtLoadBalancer: opt.StmtLB,
 	}
 }
