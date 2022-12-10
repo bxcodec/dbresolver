@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ExampleNewResolver() {
+func ExampleNew() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
@@ -42,7 +42,7 @@ func ExampleNewResolver() {
 	// configure the DBs for other setup eg, tracing, etc
 	// eg, tracing.Postgres(dbReadOnlyReplica)
 
-	connectionDB := dbresolver.NewResolver(
+	connectionDB := dbresolver.New(
 		dbresolver.WithPrimaryDBs(dbPrimary),
 		dbresolver.WithReplicaDBs(dbReadOnlyReplica),
 		dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))

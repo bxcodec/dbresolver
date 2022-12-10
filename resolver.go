@@ -1,9 +1,7 @@
 package dbresolver
 
-// Resolver will resolve all the passed connection
-// first DB connection is the primary-writer connection (RW),
-// the rest connection will be used for RO connection
-func NewResolver(opts ...OptionFunc) DB {
+// New will resolve all the passed connection with configurable parameters
+func New(opts ...OptionFunc) DB {
 	opt := defaultOption()
 	for _, optFunc := range opts {
 		optFunc(opt)
@@ -11,7 +9,7 @@ func NewResolver(opts ...OptionFunc) DB {
 
 	if len(opt.PrimaryDBs) == 0 {
 		panic("required primary db connection, set the primary db " +
-			"connection with dbresolver.Resolver(dbresolver.WithPrimaryDBs(primaryDB))")
+			"connection with dbresolver.New(dbresolver.WithPrimaryDBs(primaryDB))")
 	}
 	return &sqlDB{
 		primaries:        opt.PrimaryDBs,

@@ -12,12 +12,14 @@ import (
 // DB interface is a contract that supported by this library.
 // All offered function of this library defined here.
 // This supposed to be aligned with sql.DB, but since some of the functions is not relevant
-// with multi dbs connection, we decided to not support it
+// with multi dbs connection, we decided to forward all single connection DB related function to the first primary DB
+// For example, function like, `Conn()“, or `Stats()` only available for the primary DB, or the first primary DB (if using multi-primary)
 type DB interface {
 	Begin() (*sql.Tx, error)
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 	Close() error
-	Conn(ctx context.Context) (*sql.Conn, error) // db stats for only one of the primary db
+	// Conn only available for the primary db or the first primary db (if using multi-primary)
+	Conn(ctx context.Context) (*sql.Conn, error)
 	Driver() driver.Driver
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -35,14 +37,15 @@ type DB interface {
 	SetMaxOpenConns(n int)
 	PrimaryDBs() []*sql.DB
 	ReplicaDBs() []*sql.DB
-	Stats() sql.DBStats // db stats for only one of the primary db
+	// Stats only available for the primary db or the first primary db (if using multi-primary)
+	Stats() sql.DBStats
 }
 
-// Supported LoadBalancer
-type (
-	DBLoadBalancer   LoadBalancer[*sql.DB]
-	StmtLoadBalancer LoadBalancer[*sql.Stmt]
-)
+// DBLoadBalancer is loadbalancer for physical DBs
+type DBLoadBalancer LoadBalancer[*sql.DB]
+
+// StmtLoadBalancer is loadbalancer for query prepared statements
+type StmtLoadBalancer LoadBalancer[*sql.Stmt]
 
 // sqlDB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) db.
