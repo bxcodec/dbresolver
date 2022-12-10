@@ -95,10 +95,10 @@ func TestMultiWrite(t *testing.T) {
 
 	t.Run("replica dbs", func(t *testing.T) {
 
-		for i := 0; i < noOfReplicas*5; i++ {
+		for i := 0; i < noOfReplicas*6; i++ {
 
 			robin := resolver.loadBalancer.Predict(noOfReplicas)
-			mock := mockPimaries[robin]
+			mock := mockReplicas[robin]
 
 			switch i % 6 {
 
@@ -160,7 +160,7 @@ func TestMultiWrite(t *testing.T) {
 			return
 		}
 
-		robin := resolver.loadBalancer.Predict(noOfPrimaries)
+		robin := resolver.stmtLoadBalancer.Predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)

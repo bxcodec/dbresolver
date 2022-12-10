@@ -7,4 +7,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.14
 )
 
-require github.com/DATA-DOG/go-sqlmock v1.5.0
+require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
+	go.uber.org/multierr v1.8.0
+)
+
+require go.uber.org/atomic v1.10.0 // indirect

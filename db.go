@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"go.uber.org/multierr"
 	"strings"
 	"time"
 )
@@ -184,26 +185,26 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
-	return doParallely(db.totalConnection, func(i int) error {
-		if i < len(db.primaries) {
-			return db.primaries[i].Ping()
-		}
-
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].Ping()
+	err := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].Ping()
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].Ping()
+	})
+	return multierr.Combine(err, errReplicas)
+
 }
 
 // PingContext verifies if a connection to each physical database is still
 // alive, establishing a connection if necessary.
 func (db *sqlDB) PingContext(ctx context.Context) error {
-	return doParallely(db.totalConnection, func(i int) error {
-		if i < len(db.primaries) {
-			return db.primaries[i].PingContext(ctx)
-		}
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].PingContext(ctx)
+	err := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].PingContext(ctx)
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].PingContext(ctx)
+	})
+	return multierr.Combine(err, errReplicas)
 }
 
 // Prepare creates a prepared statement for later queries or executions

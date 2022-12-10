@@ -31,16 +31,21 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	rand.Seed(time.Now().UnixNano())
-	max := len(dbs) - 1
-	min := 0
-	idx := rand.Intn(max-min+1) + min
-	lb.randomInt = idx
-	return dbs[idx]
+	if lb.randomInt == -1 {
+		lb.Predict(len(dbs))
+	}
+	randomInt := lb.randomInt
+	lb.randomInt = -1
+	return dbs[randomInt]
 }
 
 func (lb RandomLoadBalancer[T]) Predict(n int) int {
-	return lb.randomInt
+	rand.Seed(time.Now().UnixNano())
+	max := n - 1
+	min := 0
+	idx := rand.Intn(max-min+1) + min
+	lb.randomInt = idx
+	return idx
 }
 
 // RoundRobinLoadBalancer represent for RoundRobin LB policy

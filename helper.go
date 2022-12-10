@@ -12,6 +12,7 @@ func doParallely(n int, fn func(i int) error) error {
 	for i = 0; i < cap(errors); i++ {
 		if innerErr = <-errors; innerErr != nil {
 			err = innerErr
+			return err
 		}
 	}
 
