@@ -354,7 +354,7 @@ func (db *sqlDB) SetConnMaxIdleTime(d time.Duration) {
 
 // ReadOnly returns the readonly database
 func (db *sqlDB) ReadOnly() *sql.DB {
-	if db.totalConnection == len(db.primaries) {
+	if len(db.replicas) == 0 {
 		return db.loadBalancer.Resolve(db.primaries)
 	}
 	return db.loadBalancer.Resolve(db.replicas)
