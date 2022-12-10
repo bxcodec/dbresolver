@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ExampleOpen() {
+func ExampleOpenMultiPrimary() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
@@ -22,8 +22,13 @@ func ExampleOpen() {
 		dbname    = "<dbname>"
 	)
 	// connection string
-	rwPrimary := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host1, port1, user1, password1, dbname)
-	readOnlyReplica := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host2, port2, user2, password2, dbname)
+	rwPrimary1 := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host1, port1, user1, password1, dbname)
+	rwPrimary2 := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host2, port2, user2, password2, dbname)
+	readOnlyReplica1 := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host1, port1, user1, password1, dbname)
+	readOnlyReplica2 := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host2, port2, user2, password2, dbname)
+
+	rwPrimary := fmt.Sprintf("%s;%s", rwPrimary1, rwPrimary2)
+	readOnlyReplica := fmt.Sprintf("%s;%s", readOnlyReplica1, readOnlyReplica2)
 	connectionDB, err := dbresolver.Open("postgres", fmt.Sprintf("%s;%s", rwPrimary, readOnlyReplica))
 	if err != nil {
 		log.Print("go error when connecting to the DB", err)

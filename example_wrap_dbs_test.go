@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ExampleWrapDBs() {
+func ExampleNew() {
 	var (
 		host1     = "localhost"
 		port1     = 5432
@@ -42,12 +42,15 @@ func ExampleWrapDBs() {
 	// configure the DBs for other setup eg, tracing, etc
 	// eg, tracing.Postgres(dbReadOnlyReplica)
 
-	connectionDB := dbresolver.WrapDBs(dbPrimary, dbReadOnlyReplica)
+	connectionDB := dbresolver.New(
+		dbresolver.WithPrimaryDBs(dbPrimary),
+		dbresolver.WithReplicaDBs(dbReadOnlyReplica),
+		dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))
 
 	// now you can use the connection for all DB operation
 	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
 	if err != nil {
-		log.Print("go error when executing the query to the DB")
+		log.Print("go error when executing the query to the DB", err)
 	}
 	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
 
