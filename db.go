@@ -185,55 +185,57 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
-	err := doParallely(len(db.primaries), func(i int) error {
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
 		return db.primaries[i].Ping()
 	})
 	errReplicas := doParallely(len(db.replicas), func(i int) error {
 		return db.replicas[i].Ping()
 	})
-	return multierr.Combine(err, errReplicas)
+	return multierr.Combine(errPrimaries, errReplicas)
 
 }
 
 // PingContext verifies if a connection to each physical database is still
 // alive, establishing a connection if necessary.
 func (db *sqlDB) PingContext(ctx context.Context) error {
-	err := doParallely(len(db.primaries), func(i int) error {
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
 		return db.primaries[i].PingContext(ctx)
 	})
 	errReplicas := doParallely(len(db.replicas), func(i int) error {
 		return db.replicas[i].PingContext(ctx)
 	})
-	return multierr.Combine(err, errReplicas)
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (db *sqlDB) Prepare(query string) (Stmt, error) {
-	stmt := &stmt{
-		db:           db,
-		loadBalancer: db.stmtLoadBalancer,
-	}
+func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-	err := doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			primaryStmts[i], err = db.primaries[i].Prepare(query)
-			return err
-		}
 
-		roIndex := i - len(db.primaries)
-		roStmts[roIndex], err = db.replicas[roIndex].Prepare(query)
+	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
+		primaryStmts[i], err = db.primaries[i].Prepare(query)
+		return
+	})
+	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
+		roStmts[i], err = db.replicas[i].Prepare(query)
 		return err
 	})
 
+	err = multierr.Combine(errPrimaries, errReplicas)
+
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	stmt.replicaStmts = roStmts
-	stmt.primaryStmts = primaryStmts
-	return stmt, nil
+	_stmt = &stmt{
+		db:           db,
+		loadBalancer: db.stmtLoadBalancer,
+		primaryStmts: primaryStmts,
+		replicaStmts: roStmts,
+	}
+
+	return
 }
 
 // PrepareContext creates a prepared statement for later queries or executions
@@ -241,31 +243,32 @@ func (db *sqlDB) Prepare(query string) (Stmt, error) {
 //
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
-	stmt := &stmt{
-		db:           db,
-		loadBalancer: db.stmtLoadBalancer,
-	}
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-	err := doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
-			return err
-		}
 
-		roIndex := i - len(db.primaries)
-		roStmts[roIndex], err = db.replicas[roIndex].PrepareContext(ctx, query)
+	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
+		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
+		return
+	})
+	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
+		roStmts[i], err = db.replicas[i].PrepareContext(ctx, query)
 		return err
 	})
 
+	err = multierr.Combine(errPrimaries, errReplicas)
+
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	stmt.replicaStmts = roStmts
-	stmt.primaryStmts = primaryStmts
-	return stmt, nil
+	_stmt = &stmt{
+		db:           db,
+		loadBalancer: db.stmtLoadBalancer,
+		primaryStmts: primaryStmts,
+		replicaStmts: roStmts,
+	}
+	return
 }
 
 // Query executes a query that returns rows, typically a SELECT.
