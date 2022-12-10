@@ -38,3 +38,11 @@ func TestParallelFunction(t *testing.T) {
 	fmt.Println("end")
 	//Output: end
 }
+
+/*=== RUN   TestParallelFunction
+    helper_test.go:28: Wrong value at position 2. Want: 3, Got: 9
+    helper_test.go:34: Wrong value at position 2. Want: 3, Got: 9
+end
+--- FAIL: TestParallelFunction (0.00s)
+
+FAIL*/
