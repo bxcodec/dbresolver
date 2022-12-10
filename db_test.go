@@ -2,7 +2,6 @@ package dbresolver
 
 import (
 	"testing"
-	"testing/quick"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -43,23 +42,23 @@ func TestClose(t *testing.T) {
 	}
 }
 
-func TestReplicaRoundRobin(t *testing.T) {
-	db := &sqlDB{}
-	last := -1
+// func TestReplicaRoundRobin(t *testing.T) {
+// 	db := &sqlDB{}
+// 	last := -1
 
-	err := quick.Check(func(n int) bool {
-		index := db.rounRobinRO(n)
-		if n <= 1 {
-			return index == 0
-		}
+// 	err := quick.Check(func(n int) bool {
+// 		index := db.rounRobinRO(n)
+// 		if n <= 1 {
+// 			return index == 0
+// 		}
 
-		result := index > 0 && index < n && index != last
-		last = index
+// 		result := index > 0 && index < n && index != last
+// 		last = index
 
-		return result
-	}, nil)
+// 		return result
+// 	}, nil)
 
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }

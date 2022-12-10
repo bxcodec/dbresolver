@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"strings"
-	"sync/atomic"
 	"time"
 )
 
@@ -38,15 +38,18 @@ type DB interface {
 	Stats() sql.DBStats // db stats for only one of the primary db
 }
 
+type DBLoadBalancer LoadBalancer[*sql.DB]
+type StmtLoadBalancer LoadBalancer[*sql.Stmt]
+
 // sqlDB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) database.
 // Reads and writes are automatically directed to the correct db connection
 type sqlDB struct {
-	primaries       []*sql.DB
-	replicas        []*sql.DB
-	totalConnection int
-	replicasCount   uint64 // Monotonically incrementing counter on each query
-	primariesCount  uint64 // Monotonically incrementing counter on each query
+	primaries        []*sql.DB
+	replicas         []*sql.DB
+	totalConnection  int
+	dbLoadBalancer   DBLoadBalancer
+	stmtLoadBalancer StmtLoadBalancer
 }
 
 // Open concurrently opens each underlying db connection
@@ -54,6 +57,10 @@ type sqlDB struct {
 // one being used as the RW-database(primary) and the rest as RO databases (replicas).
 func Open(driverName, dataSourceNames string) (db DB, err error) {
 	conns := strings.Split(dataSourceNames, ";")
+	if len(conns) == 0 {
+		return nil, errors.New("invalid data source name")
+	}
+
 	database := &sqlDB{
 		replicas:  make([]*sql.DB, len(conns)-1),
 		primaries: make([]*sql.DB, 1),
@@ -84,6 +91,11 @@ func Open(driverName, dataSourceNames string) (db DB, err error) {
 func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceNames string) (db DB, err error) {
 	primaryConns := strings.Split(primaryDataSourceNames, ";")
 	readOnlyConns := strings.Split(readOnlyDataSourceNames, ";")
+
+	if len(primaryConns) == 0 {
+		return nil, errors.New("require primary data source name")
+	}
+
 	database := &sqlDB{
 		replicas:  make([]*sql.DB, len(readOnlyConns)),
 		primaries: make([]*sql.DB, len(primaryConns)),
@@ -187,7 +199,8 @@ func (database *sqlDB) PingContext(ctx context.Context) error {
 // on each physical database, concurrently.
 func (database *sqlDB) Prepare(query string) (Stmt, error) {
 	stmt := &stmt{
-		db: database,
+		db:           database,
+		loadBalancer: database.stmtLoadBalancer,
 	}
 	roStmts := make([]*sql.Stmt, len(database.replicas))
 	primaryStmts := make([]*sql.Stmt, len(database.primaries))
@@ -218,7 +231,8 @@ func (database *sqlDB) Prepare(query string) (Stmt, error) {
 // the execution of the statement.
 func (database *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 	stmt := &stmt{
-		db: database,
+		db:           database,
+		loadBalancer: database.stmtLoadBalancer,
 	}
 	roStmts := make([]*sql.Stmt, len(database.replicas))
 	primaryStmts := make([]*sql.Stmt, len(database.primaries))
@@ -330,29 +344,14 @@ func (database *sqlDB) SetConnMaxIdleTime(d time.Duration) {
 // ReadOnly returns the readonly database
 func (database *sqlDB) ReadOnly() *sql.DB {
 	if database.totalConnection == len(database.primaries) {
-		return database.primaries[database.rounRobinRW(len(database.primaries))]
+		return database.dbLoadBalancer.Resolve(database.primaries)
 	}
-
-	return database.replicas[database.rounRobinRO(len(database.replicas))]
+	return database.dbLoadBalancer.Resolve(database.replicas)
 }
 
 // ReadWrite returns the primary database
 func (database *sqlDB) ReadWrite() *sql.DB {
-	return database.primaries[database.rounRobinRW(len(database.primaries))]
-}
-
-func (database *sqlDB) rounRobinRO(n int) int {
-	if n <= 1 {
-		return 0
-	}
-	return int((atomic.AddUint64(&database.replicasCount, 1) % uint64(n)))
-}
-
-func (database *sqlDB) rounRobinRW(n int) int {
-	if n <= 1 {
-		return 0
-	}
-	return int((atomic.AddUint64(&database.primariesCount, 1) % uint64(n)))
+	return database.dbLoadBalancer.Resolve(database.primaries)
 }
 
 // Conn returns a single connection by either opening a new connection or returning an existing connection from the

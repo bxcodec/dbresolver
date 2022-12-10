@@ -18,8 +18,8 @@ type Stmt interface {
 }
 
 type stmt struct {
-	db *sqlDB
-
+	db           *sqlDB
+	loadBalancer StmtLoadBalancer
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
 }
@@ -89,13 +89,12 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 func (s *stmt) ROStmt() *sql.Stmt {
 	totalStmtsConn := len(s.replicaStmts) + len(s.primaryStmts)
 	if totalStmtsConn == len(s.primaryStmts) {
-		return s.primaryStmts[s.db.rounRobinRW(len(s.primaryStmts))]
+		return s.loadBalancer.Resolve(s.primaryStmts)
 	}
-
-	return s.replicaStmts[s.db.rounRobinRO(len(s.replicaStmts))]
+	return s.loadBalancer.Resolve(s.replicaStmts)
 }
 
 // RWStmt return the primary statement
 func (s *stmt) RWStmt() *sql.Stmt {
-	return s.primaryStmts[s.db.rounRobinRW(len(s.primaryStmts))]
+	return s.loadBalancer.Resolve(s.primaryStmts)
 }
