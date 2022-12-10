@@ -3,10 +3,9 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 )
-
-import "github.com/DATA-DOG/go-sqlmock"
 
 func TestMultiWrite(t *testing.T) {
 
@@ -58,7 +57,7 @@ func TestMultiWrite(t *testing.T) {
 			robin := resolver.loadBalancer.Predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			switch i % 6 {
+			switch i % 5 {
 
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
@@ -81,12 +80,8 @@ func TestMultiWrite(t *testing.T) {
 					ReadOnly:  false,
 				})
 				t.Log("begin transaction")
-			default:
-				mock.ExpectPing()
-				resolver.Ping()
-				t.Log("ping")
-			}
 
+			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
@@ -100,7 +95,7 @@ func TestMultiWrite(t *testing.T) {
 			robin := resolver.loadBalancer.Predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
-			switch i % 6 {
+			switch i % 5 {
 
 			case 0:
 				query := "select 1'"
@@ -122,14 +117,10 @@ func TestMultiWrite(t *testing.T) {
 				mock.ExpectQuery(query)
 				resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
-			default:
-				mock.ExpectPing()
-				resolver.Ping()
-				t.Log("ping")
-			}
 
-			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("there were unfulfilled expectations: %s", err)
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
 			}
 		}
 	})
@@ -166,6 +157,21 @@ func TestMultiWrite(t *testing.T) {
 		mock.ExpectExec(query)
 
 		stmt.Exec()
+
+	})
+
+	t.Run("ping", func(t *testing.T) {
+		for _, mock := range mockPimaries {
+			mock.ExpectPing()
+			mock.ExpectPing()
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectPing()
+			mock.ExpectPing()
+		}
+
+		resolver.Ping()
+		resolver.PingContext()
 
 	})
 
