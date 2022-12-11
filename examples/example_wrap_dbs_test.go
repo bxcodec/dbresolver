@@ -53,6 +53,6 @@ func ExampleNew() {
 	if err != nil {
 		log.Print("go error when executing the query to the DB", err)
 	}
-	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
+	connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
 	// Output:
 }
