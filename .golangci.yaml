@@ -132,12 +132,14 @@ issues:
     - path: _test\.go
       linters:
         - gomnd
+    - path: db_test.go
+      text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
+    - path: db_test.go
+      linters:
         - goconst
         - funlen
         - gocyclo
         - errcheck
-    - path: db_test.go
-      text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
     - path: loadbalancer.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 run:
