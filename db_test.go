@@ -3,7 +3,6 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 )
@@ -112,9 +111,9 @@ BEGIN_TEST_CASE:
 
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
-				mock.ExpectExec(query)
-				resolver.Exec(query)
-				t.Log("exec")
+				expected := mock.ExpectExec(query)
+				_, _ = resolver.Exec(query)
+				t.Log("exec", expected.String())
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
@@ -237,8 +236,14 @@ BEGIN_TEST_CASE:
 			}(mock)
 		}
 
-		resolver.Ping()
-		resolver.PingContext(context.TODO())
+		err := resolver.Ping()
+		if err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
+		err = resolver.PingContext(context.TODO())
+		if err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
 	})
 
 	t.Run("close", func(t *testing.T) {
@@ -260,8 +265,7 @@ BEGIN_TEST_CASE:
 		}
 		resolver.Close()
 
-		t.Log(fmt.Sprintf("%dP%dR", noOfPrimaries, noOfReplicas))
-
+		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
 	})
 
 	goto BEGIN_TEST_CASE
