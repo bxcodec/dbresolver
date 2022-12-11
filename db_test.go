@@ -11,7 +11,7 @@ import (
 func TestMultiWrite(t *testing.T) {
 
 	loadBalancerPolices := []LoadBalancerPolicy{
-		//RoundRobinLB,
+		RoundRobinLB,
 		RandomLB,
 	}
 
@@ -27,21 +27,21 @@ BEGIN_TEST:
 	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
 
 	testCases := [][2]uint{
-		//{1, 0},
-		//{1, 1},
+		{1, 0},
+		{1, 1},
 		{1, 2},
-		//{1, 10},
-		//{2, 0},
-		//{2, 1},
-		//{3, 0},
-		//{3, 1},
-		//{3, 2},
-		//{3, 3},
-		//{3, 6},
-		//{5, 6},
-		//{7, 20},
-		//{10, 10},
-		//{10, 20},
+		{1, 10},
+		{2, 0},
+		{2, 1},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
+		{3, 6},
+		{5, 6},
+		{7, 20},
+		{10, 10},
+		{10, 20},
 	}
 
 	retrieveTestCase := func() (int, int) {
