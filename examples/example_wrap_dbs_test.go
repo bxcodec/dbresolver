@@ -55,5 +55,4 @@ func ExampleNew() {
 	}
 	_ = connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
 	// Output :
-
 }
