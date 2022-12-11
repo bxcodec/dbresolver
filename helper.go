@@ -1,7 +1,6 @@
 package dbresolver
 
 import (
-	"fmt"
 	"sync"
 
 	"go.uber.org/multierr"
@@ -13,9 +12,7 @@ func doParallely(n int, fn func(i int) error) error {
 	wg.Add(n)
 	for i := 0; i < n; i++ {
 		go func(i int) {
-			err := fn(i)
-			fmt.Println(" MASUK INI Aaa", i)
-			errors <- err
+			errors <- fn(i)
 			wg.Done()
 		}(i)
 	}
