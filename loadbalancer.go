@@ -16,7 +16,7 @@ type DBConnection interface {
 type LoadBalancer[T DBConnection] interface {
 	Resolve([]T) T
 	Name() LoadBalancerPolicy
-	Predict(n int) int
+	predict(n int) int
 }
 
 // RandomLoadBalancer represent for Random LB policy
@@ -32,7 +32,7 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if len(lb.randInt) == 0 {
-		lb.Predict(len(dbs))
+		lb.predict(len(dbs))
 	}
 
 	randomInt := <-lb.randInt
@@ -40,7 +40,7 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	return dbs[randomInt]
 }
 
-func (lb RandomLoadBalancer[T]) Predict(n int) int {
+func (lb RandomLoadBalancer[T]) predict(n int) int {
 	rand.Seed(time.Now().UnixNano())
 	max := n - 1
 	min := 0
@@ -73,7 +73,7 @@ func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
 	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
 
-func (lb *RoundRobinLoadBalancer[T]) Predict(n int) int {
+func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	if n <= 1 {
 		return 0
 	}

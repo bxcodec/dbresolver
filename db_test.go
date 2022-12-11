@@ -103,7 +103,7 @@ BEGIN_TEST_CASE:
 	t.Run("primary dbs", func(t *testing.T) {
 
 		for i := 0; i < noOfPrimaries*5; i++ {
-			robin := resolver.loadBalancer.Predict(noOfPrimaries)
+			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
 			t.Log("case - ", i%4)
@@ -145,7 +145,7 @@ BEGIN_TEST_CASE:
 
 		for i := 0; i < noOfReplicas*5; i++ {
 
-			robin := resolver.loadBalancer.Predict(noOfReplicas)
+			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
 			t.Log("case -", i%4)
@@ -208,7 +208,7 @@ BEGIN_TEST_CASE:
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.Predict(noOfPrimaries)
+		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)
