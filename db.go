@@ -7,6 +7,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // DB interface is a contract that supported by this library.
@@ -58,40 +60,6 @@ type sqlDB struct {
 	stmtLoadBalancer StmtLoadBalancer
 }
 
-// Open concurrently opens each underlying db connection
-// dataSourceNames must be a semi-comma separated list of DSNs with the first
-// one being used as the RW-database(primary) and the rest as RO databases (replicas).
-func Open(driverName, dataSourceNames string) (res DB, err error) {
-	conns := strings.Split(dataSourceNames, ";")
-	if len(conns) == 0 {
-		return nil, errors.New("invalid data source name")
-	}
-	opt := defaultOption()
-	db := &sqlDB{
-		replicas:         make([]*sql.DB, len(conns)-1),
-		primaries:        make([]*sql.DB, 1),
-		loadBalancer:     opt.DBLB,
-		stmtLoadBalancer: opt.StmtLB,
-	}
-
-	db.totalConnection = len(conns)
-	err = doParallely(db.totalConnection, func(i int) (err error) {
-		if i == 0 {
-			db.primaries[0], err = sql.Open(driverName, conns[i])
-			return err
-		}
-		var roDB *sql.DB
-		roDB, err = sql.Open(driverName, conns[i])
-		if err != nil {
-			return
-		}
-		db.replicas[i-1] = roDB
-		return err
-	})
-
-	return db, err
-}
-
 // OpenMultiPrimary concurrently opens each underlying db connection
 // both primaryDataSourceNames and readOnlyDataSourceNames must be a semi-comma separated list of DSNs
 // primaryDataSourceNames will be used as the RW-database(primary)
@@ -138,14 +106,13 @@ func (db *sqlDB) ReplicaDBs() []*sql.DB {
 
 // Close closes all physical databases concurrently, releasing any open resources.
 func (db *sqlDB) Close() error {
-	return doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			return db.primaries[i].Close()
-		}
-
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].Close()
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].Close()
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].Close()
+	})
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // Driver returns the physical database's underlying driver.
@@ -184,55 +151,56 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
-	return doParallely(db.totalConnection, func(i int) error {
-		if i < len(db.primaries) {
-			return db.primaries[i].Ping()
-		}
-
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].Ping()
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].Ping()
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].Ping()
+	})
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // PingContext verifies if a connection to each physical database is still
 // alive, establishing a connection if necessary.
 func (db *sqlDB) PingContext(ctx context.Context) error {
-	return doParallely(db.totalConnection, func(i int) error {
-		if i < len(db.primaries) {
-			return db.primaries[i].PingContext(ctx)
-		}
-		roIndex := i - len(db.primaries)
-		return db.replicas[roIndex].PingContext(ctx)
+	errPrimaries := doParallely(len(db.primaries), func(i int) error {
+		return db.primaries[i].PingContext(ctx)
 	})
+	errReplicas := doParallely(len(db.replicas), func(i int) error {
+		return db.replicas[i].PingContext(ctx)
+	})
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (db *sqlDB) Prepare(query string) (Stmt, error) {
-	stmt := &stmt{
-		db:           db,
-		loadBalancer: db.stmtLoadBalancer,
-	}
+func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-	err := doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			primaryStmts[i], err = db.primaries[i].Prepare(query)
-			return err
-		}
 
-		roIndex := i - len(db.primaries)
-		roStmts[roIndex], err = db.replicas[roIndex].Prepare(query)
+	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
+		primaryStmts[i], err = db.primaries[i].Prepare(query)
+		return
+	})
+	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
+		roStmts[i], err = db.replicas[i].Prepare(query)
 		return err
 	})
 
+	err = multierr.Combine(errPrimaries, errReplicas)
+
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	stmt.replicaStmts = roStmts
-	stmt.primaryStmts = primaryStmts
-	return stmt, nil
+	_stmt = &stmt{
+		db:           db,
+		loadBalancer: db.stmtLoadBalancer,
+		primaryStmts: primaryStmts,
+		replicaStmts: roStmts,
+	}
+
+	return
 }
 
 // PrepareContext creates a prepared statement for later queries or executions
@@ -240,31 +208,32 @@ func (db *sqlDB) Prepare(query string) (Stmt, error) {
 //
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (Stmt, error) {
-	stmt := &stmt{
-		db:           db,
-		loadBalancer: db.stmtLoadBalancer,
-	}
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-	err := doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(db.primaries) {
-			primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
-			return err
-		}
 
-		roIndex := i - len(db.primaries)
-		roStmts[roIndex], err = db.replicas[roIndex].PrepareContext(ctx, query)
+	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
+		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
+		return
+	})
+	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
+		roStmts[i], err = db.replicas[i].PrepareContext(ctx, query)
 		return err
 	})
 
+	err = multierr.Combine(errPrimaries, errReplicas)
+
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	stmt.replicaStmts = roStmts
-	stmt.primaryStmts = primaryStmts
-	return stmt, nil
+	_stmt = &stmt{
+		db:           db,
+		loadBalancer: db.stmtLoadBalancer,
+		primaryStmts: primaryStmts,
+		replicaStmts: roStmts,
+	}
+	return
 }
 
 // Query executes a query that returns rows, typically a SELECT.
@@ -354,7 +323,7 @@ func (db *sqlDB) SetConnMaxIdleTime(d time.Duration) {
 
 // ReadOnly returns the readonly database
 func (db *sqlDB) ReadOnly() *sql.DB {
-	if db.totalConnection == len(db.primaries) {
+	if len(db.replicas) == 0 {
 		return db.loadBalancer.Resolve(db.primaries)
 	}
 	return db.loadBalancer.Resolve(db.replicas)
