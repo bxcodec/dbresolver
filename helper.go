@@ -11,7 +11,6 @@ func doParallely(n int, fn func(i int) error) error {
 	errors := make(chan error, n)
 	wg := &sync.WaitGroup{}
 	wg.Add(n)
-	// mutex := &sync.Mutex{}
 	for i := 0; i < n; i++ {
 		go func(i int) {
 			err := fn(i)

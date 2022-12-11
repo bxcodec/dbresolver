@@ -21,20 +21,11 @@ func TestParallelFunction(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	// seq := []int{1, 2, 9, 4, 25, 6, 49, 8} // this is the expected end result
+	// this is the expected end result
 	want := []int{1, 2, 9, 4, 25, 6, 49, 8}
 	for i, wanted := range want {
 		if wanted != seq[i] {
 			t.Errorf("Wrong value at position %d. Want: %d, Got: %d", i, wanted, seq[i])
 		}
 	}
-
 }
-
-/*=== RUN   TestParallelFunction
-    helper_test.go:28: Wrong value at position 2. Want: 3, Got: 9
-    helper_test.go:34: Wrong value at position 2. Want: 3, Got: 9
-end
---- FAIL: TestParallelFunction (0.00s)
-
-FAIL*/
