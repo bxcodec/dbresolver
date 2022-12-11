@@ -22,8 +22,7 @@ type LoadBalancer[T DBConnection] interface {
 
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
-	randomInt  int
-	randomInts chan int
+	randInt chan int
 }
 
 // RandomLoadBalancer return the LB policy name
@@ -33,12 +32,10 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	//if lb.randomInt == -1 {
-	//	lb.Predict(len(dbs))
-	//}
+	go lb.Predict(len(dbs))
+
 	//randomInt := lb.randomInt
-	randomInt := <-lb.randomInts
-	lb.randomInt = -1
+	randomInt := <-lb.randInt
 	log.Println("consumed")
 	return dbs[randomInt]
 }
@@ -48,8 +45,7 @@ func (lb RandomLoadBalancer[T]) Predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	lb.randomInt = idx
-	lb.randomInts <- idx
+	lb.randInt <- idx
 	log.Println("predicted")
 	return idx
 }

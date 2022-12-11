@@ -4,9 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"errors"
 	"go.uber.org/multierr"
-	"strings"
 	"time"
 )
 
@@ -59,40 +57,6 @@ type sqlDB struct {
 	stmtLoadBalancer StmtLoadBalancer
 }
 
-// OpenMultiPrimary concurrently opens each underlying db connection
-// both primaryDataSourceNames and readOnlyDataSourceNames must be a semi-comma separated list of DSNs
-// primaryDataSourceNames will be used as the RW-database(primary)
-// and readOnlyDataSourceNames as RO databases (replicas).
-func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceNames string) (res DB, err error) {
-	primaryConns := strings.Split(primaryDataSourceNames, ";")
-	readOnlyConns := strings.Split(readOnlyDataSourceNames, ";")
-
-	if len(primaryConns) == 0 {
-		return nil, errors.New("require primary data source name")
-	}
-
-	opt := defaultOption()
-	db := &sqlDB{
-		replicas:         make([]*sql.DB, len(readOnlyConns)),
-		primaries:        make([]*sql.DB, len(primaryConns)),
-		loadBalancer:     opt.DBLB,
-		stmtLoadBalancer: opt.StmtLB,
-	}
-
-	db.totalConnection = len(primaryConns) + len(readOnlyConns)
-	err = doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(primaryConns) {
-			db.primaries[0], err = sql.Open(driverName, primaryConns[i])
-			return err
-		}
-		roIndex := i - len(primaryConns)
-		db.replicas[roIndex], err = sql.Open(driverName, readOnlyConns[roIndex])
-		return err
-	})
-
-	return db, err
-}
-
 // PrimaryDBs return all the active primary DB
 func (db *sqlDB) PrimaryDBs() []*sql.DB {
 	return db.primaries
@@ -137,7 +101,7 @@ func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, err
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
 func (db *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.ReadWrite().Exec(query, args...)
+	return db.ExecContext(context.Background(), query, args...)
 }
 
 // ExecContext executes a query without returning any rows.

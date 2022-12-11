@@ -106,7 +106,9 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.Predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			switch i % 5 {
+			t.Log("case - ", i%4)
+
+			switch i % 4 {
 
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
@@ -122,13 +124,15 @@ BEGIN_TEST_CASE:
 				mock.ExpectBegin()
 				resolver.Begin()
 				t.Log("begin")
-			case 4:
+			case 3:
 				mock.ExpectBegin()
 				resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
 				t.Log("begin transaction")
+			default:
+				t.Fatal("developer needs to work on the tests")
 
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -144,7 +148,9 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.Predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
-			switch i % 5 {
+			t.Log("case -", i%4)
+
+			switch i % 4 {
 
 			case 0:
 				query := "select 1'"
@@ -152,23 +158,26 @@ BEGIN_TEST_CASE:
 				resolver.Query(query)
 				t.Log("query")
 			case 1:
-				query := "select 1'"
+				query := "select 'row'"
 				mock.ExpectQuery(query)
 				resolver.QueryRow(query)
 				t.Log("query row")
 			case 2:
-				query := "select 1'"
+				query := "select 'query-ctx' "
 				mock.ExpectQuery(query)
 				resolver.QueryContext(context.TODO(), query)
 				t.Log("query context")
-			case 4:
-				query := "select 1'"
+			case 3:
+				query := "select 'row'"
 				mock.ExpectQuery(query)
 				resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
+			default:
+				t.Fatal("developer needs to work on the tests")
+
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("there were unfulfilled expectations: %s", err)
+				t.Errorf("expect failed %s", err)
 			}
 		}
 	})
