@@ -3,10 +3,9 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"time"
-
+	"database/sql/driver" 
 	"go.uber.org/multierr"
+	"time"
 )
 
 // DB interface is a contract that supported by this library.
@@ -101,7 +100,7 @@ func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, err
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
 func (db *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.ReadWrite().Exec(query, args...)
+	return db.ExecContext(context.Background(), query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
@@ -114,13 +113,8 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
-	errPrimaries := doParallely(len(db.primaries), func(i int) error {
-		return db.primaries[i].Ping()
-	})
-	errReplicas := doParallely(len(db.replicas), func(i int) error {
-		return db.replicas[i].Ping()
-	})
-	return multierr.Combine(errPrimaries, errReplicas)
+	return db.PingContext(context.Background())
+
 }
 
 // PingContext verifies if a connection to each physical database is still
@@ -138,32 +132,7 @@ func (db *sqlDB) PingContext(ctx context.Context) error {
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
 func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
-	roStmts := make([]*sql.Stmt, len(db.replicas))
-	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-
-	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
-		primaryStmts[i], err = db.primaries[i].Prepare(query)
-		return
-	})
-	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
-		roStmts[i], err = db.replicas[i].Prepare(query)
-		return err
-	})
-
-	err = multierr.Combine(errPrimaries, errReplicas)
-
-	if err != nil {
-		return
-	}
-
-	_stmt = &stmt{
-		db:           db,
-		loadBalancer: db.stmtLoadBalancer,
-		primaryStmts: primaryStmts,
-		replicaStmts: roStmts,
-	}
-
-	return
+	return db.PrepareContext(context.Background(), query)
 }
 
 // PrepareContext creates a prepared statement for later queries or executions
@@ -203,7 +172,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 // The args are for any placeholder parameters in the query.
 // Query uses a radonly db as the physical db.
 func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return db.ReadOnly().Query(query, args...)
+	return db.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
@@ -218,7 +187,7 @@ func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interfa
 // Errors are deferred until Row's Scan method is called.
 // QueryRow uses a radonly db as the physical db.
 func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
-	return db.ReadOnly().QueryRow(query, args...)
+	return db.QueryRowContext(context.Background(), query, args...)
 }
 
 // QueryRowContext executes a query that is expected to return at most one row.

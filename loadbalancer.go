@@ -3,7 +3,6 @@ package dbresolver
 import (
 	"database/sql"
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -22,35 +21,32 @@ type LoadBalancer[T DBConnection] interface {
 
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
-	randomInt int
-	mu        sync.Mutex
+	randInt chan int
 }
 
 // RandomLoadBalancer return the LB policy name
-func (lb *RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
+func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RandomLB
 }
 
 // Resolve return the resolved option for Random LB
-func (lb *RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	if lb.randomInt == -1 {
+func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
+	if len(lb.randInt) == 0 {
 		lb.predict(len(dbs))
 	}
-	randomInt := lb.randomInt
-	lb.mu.Lock()
-	lb.randomInt = -1
-	lb.mu.Unlock()
+
+	randomInt := <-lb.randInt
+	//log.Println("consumed")
 	return dbs[randomInt]
 }
 
-func (lb *RandomLoadBalancer[T]) predict(n int) int {
+func (lb RandomLoadBalancer[T]) predict(n int) int {
 	rand.Seed(time.Now().UnixNano())
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	lb.mu.Lock()
-	lb.randomInt = idx
-	lb.mu.Unlock()
+	lb.randInt <- idx
+	//log.Println("predicted")
 	return idx
 }
 

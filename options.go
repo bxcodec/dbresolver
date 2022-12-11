@@ -44,8 +44,12 @@ func WithLoadBalancer(lb LoadBalancerPolicy) OptionFunc {
 			opt.DBLB = &RoundRobinLoadBalancer[*sql.DB]{}
 			opt.StmtLB = &RoundRobinLoadBalancer[*sql.Stmt]{}
 		case RandomLB:
-			opt.DBLB = &RandomLoadBalancer[*sql.DB]{}
-			opt.StmtLB = &RandomLoadBalancer[*sql.Stmt]{}
+			opt.DBLB = &RandomLoadBalancer[*sql.DB]{
+				randInt: make(chan int, 1),
+			}
+			opt.StmtLB = &RandomLoadBalancer[*sql.Stmt]{
+				randInt: make(chan int, 1),
+			}
 		}
 	}
 }
