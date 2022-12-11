@@ -3,13 +3,12 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestMultiWrite(t *testing.T) {
-
 	loadBalancerPolices := []LoadBalancerPolicy{
 		RoundRobinLB,
 		RandomLB,
@@ -51,7 +50,6 @@ BEGIN_TEST:
 	}
 
 BEGIN_TEST_CASE:
-
 	if len(testCases) == 0 {
 		if len(loadBalancerPolices) == 0 {
 			return
@@ -84,9 +82,7 @@ BEGIN_TEST_CASE:
 	}
 
 	for i := 0; i < noOfReplicas; i++ {
-
 		db, mock, err := createMock()
-
 		if err != nil {
 			t.Fatal("creating of mock failed")
 		}
@@ -101,7 +97,6 @@ BEGIN_TEST_CASE:
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(loadBalancerPolicy)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
-
 		for i := 0; i < noOfPrimaries*5; i++ {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
@@ -142,9 +137,7 @@ BEGIN_TEST_CASE:
 	})
 
 	t.Run("replica dbs", func(t *testing.T) {
-
 		for i := 0; i < noOfReplicas*5; i++ {
-
 			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
@@ -214,7 +207,6 @@ BEGIN_TEST_CASE:
 		mock.ExpectExec(query)
 
 		stmt.Exec()
-
 	})
 
 	t.Run("ping", func(t *testing.T) {
@@ -260,12 +252,10 @@ BEGIN_TEST_CASE:
 		}
 		resolver.Close()
 
-		t.Log(fmt.Sprintf("%dP%dR", noOfPrimaries, noOfReplicas))
-
+		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
 	})
 
 	goto BEGIN_TEST_CASE
-
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
