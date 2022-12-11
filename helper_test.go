@@ -29,7 +29,7 @@ func TestParallelFunction(t *testing.T) {
 		}
 	}
 
-	for i := range want { //FIXME bxcodec ? Can u figure why this test is failing at times...
+	for i := range want { // FIXME bxcodec ? Can u figure why this test is failing at times...
 		if want[i] != seq[i] {
 			t.Errorf("Wrong value at position %d. Want: %d, Got: %d", i, want[i], seq[i])
 		}

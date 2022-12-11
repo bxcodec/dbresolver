@@ -30,7 +30,7 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 }
 
 // Resolve return the resolved option for Random LB
-func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
+func (lb *RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if lb.randomInt == -1 {
 		lb.Predict(len(dbs))
 	}
@@ -39,7 +39,7 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	return dbs[randomInt]
 }
 
-func (lb RandomLoadBalancer[T]) Predict(n int) int {
+func (lb *RandomLoadBalancer[T]) Predict(n int) int {
 	rand.Seed(time.Now().UnixNano())
 	max := n - 1
 	min := 0

@@ -3,9 +3,9 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestMultiWrite(t *testing.T) {
@@ -49,7 +49,6 @@ BEGIN:
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
 	for i := 0; i < noOfPrimaries; i++ {
-
 		db, mock, err := createMock()
 
 		if err != nil {
@@ -61,11 +60,9 @@ BEGIN:
 
 		primaries[i] = db
 		mockPimaries[i] = mock
-
 	}
 
 	for i := 0; i < noOfReplicas; i++ {
-
 		db, mock, err := createMock()
 
 		if err != nil {
@@ -82,35 +79,44 @@ BEGIN:
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
-
 		for i := 0; i < noOfPrimaries*5; i++ {
 			robin := resolver.loadBalancer.Predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
 			switch i % 5 {
-
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				resolver.Exec(query)
+				_, err := resolver.Exec(query)
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("exec")
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				resolver.ExecContext(context.TODO(), query)
+				_, err := resolver.ExecContext(context.TODO(), query)
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("exec context")
 			case 2:
 				mock.ExpectBegin()
-				resolver.Begin()
+				_, err := resolver.Begin()
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("begin")
 			case 4:
 				mock.ExpectBegin()
-				resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				_, err := resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("begin transaction")
-
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
@@ -119,33 +125,36 @@ BEGIN:
 	})
 
 	t.Run("replica dbs", func(t *testing.T) {
-
 		for i := 0; i < noOfReplicas*5; i++ {
-
 			robin := resolver.loadBalancer.Predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
 			switch i % 5 {
-
 			case 0:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.Query(query)
+				_, err := resolver.Query(query)
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("query")
 			case 1:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.QueryRow(query)
+				_ = resolver.QueryRow(query)
 				t.Log("query row")
 			case 2:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.QueryContext(context.TODO(), query)
+				_, err := resolver.QueryContext(context.TODO(), query)
+				if err != nil {
+					t.Errorf("got %v, want %v", err, nil)
+				}
 				t.Log("query context")
 			case 4:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.QueryRowContext(context.TODO(), query)
+				_ = resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
@@ -185,8 +194,10 @@ BEGIN:
 
 		mock.ExpectExec(query)
 
-		stmt.Exec()
-
+		_, err = stmt.Exec()
+		if err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
 	})
 
 	t.Run("ping", func(t *testing.T) {
@@ -209,8 +220,14 @@ BEGIN:
 			}(mock)
 		}
 
-		resolver.Ping()
-		resolver.PingContext(context.TODO())
+		err := resolver.Ping()
+		if err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
+		err = resolver.PingContext(context.TODO())
+		if err != nil {
+			t.Errorf("got %v, want %v", err, nil)
+		}
 	})
 
 	t.Run("close", func(t *testing.T) {
@@ -232,12 +249,10 @@ BEGIN:
 		}
 		resolver.Close()
 
-		t.Log(fmt.Sprintf("%dP%dR", noOfPrimaries, noOfReplicas))
-
+		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
 	})
 
 	goto BEGIN
-
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {

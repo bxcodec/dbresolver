@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
-	"go.uber.org/multierr"
 	"strings"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // DB interface is a contract that supported by this library.
@@ -157,7 +158,6 @@ func (db *sqlDB) Ping() error {
 		return db.replicas[i].Ping()
 	})
 	return multierr.Combine(errPrimaries, errReplicas)
-
 }
 
 // PingContext verifies if a connection to each physical database is still
