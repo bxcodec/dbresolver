@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"errors"
-	"strings"
 	"time"
 
 	"go.uber.org/multierr"
@@ -55,43 +53,8 @@ type StmtLoadBalancer LoadBalancer[*sql.Stmt]
 type sqlDB struct {
 	primaries        []*sql.DB
 	replicas         []*sql.DB
-	totalConnection  int
 	loadBalancer     DBLoadBalancer
 	stmtLoadBalancer StmtLoadBalancer
-}
-
-// OpenMultiPrimary concurrently opens each underlying db connection
-// both primaryDataSourceNames and readOnlyDataSourceNames must be a semi-comma separated list of DSNs
-// primaryDataSourceNames will be used as the RW-database(primary)
-// and readOnlyDataSourceNames as RO databases (replicas).
-func OpenMultiPrimary(driverName, primaryDataSourceNames, readOnlyDataSourceNames string) (res DB, err error) {
-	primaryConns := strings.Split(primaryDataSourceNames, ";")
-	readOnlyConns := strings.Split(readOnlyDataSourceNames, ";")
-
-	if len(primaryConns) == 0 {
-		return nil, errors.New("require primary data source name")
-	}
-
-	opt := defaultOption()
-	db := &sqlDB{
-		replicas:         make([]*sql.DB, len(readOnlyConns)),
-		primaries:        make([]*sql.DB, len(primaryConns)),
-		loadBalancer:     opt.DBLB,
-		stmtLoadBalancer: opt.StmtLB,
-	}
-
-	db.totalConnection = len(primaryConns) + len(readOnlyConns)
-	err = doParallely(db.totalConnection, func(i int) (err error) {
-		if i < len(primaryConns) {
-			db.primaries[0], err = sql.Open(driverName, primaryConns[i])
-			return err
-		}
-		roIndex := i - len(primaryConns)
-		db.replicas[roIndex], err = sql.Open(driverName, readOnlyConns[roIndex])
-		return err
-	})
-
-	return db, err
 }
 
 // PrimaryDBs return all the active primary DB
