@@ -105,20 +105,20 @@ BEGIN_TEST_CASE:
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				_, _ = resolver.Exec(query)
+				resolver.Exec(query)
 				t.Log("exec")
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				_, _ = resolver.ExecContext(context.TODO(), query)
+				resolver.ExecContext(context.TODO(), query)
 				t.Log("exec context")
 			case 2:
 				mock.ExpectBegin()
-				_, _ = resolver.Begin()
+				resolver.Begin()
 				t.Log("begin")
 			case 3:
 				mock.ExpectBegin()
-				_, _ = resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
@@ -143,22 +143,22 @@ BEGIN_TEST_CASE:
 			case 0:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.Query(query) //nolint
+				resolver.Query(query)
 				t.Log("query")
 			case 1:
 				query := "select 'row'"
 				mock.ExpectQuery(query)
-				_ = resolver.QueryRow(query)
+				resolver.QueryRow(query)
 				t.Log("query row")
 			case 2:
 				query := "select 'query-ctx' "
 				mock.ExpectQuery(query)
-				resolver.QueryContext(context.TODO(), query) //nolint
+				resolver.QueryContext(context.TODO(), query)
 				t.Log("query context")
 			case 3:
 				query := "select 'row'"
 				mock.ExpectQuery(query)
-				_ = resolver.QueryRowContext(context.TODO(), query)
+				resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
 			default:
 				t.Fatal("developer needs to work on the tests")
@@ -200,7 +200,7 @@ BEGIN_TEST_CASE:
 
 		mock.ExpectExec(query)
 
-		_, _ = stmt.Exec()
+		stmt.Exec()
 	})
 
 	t.Run("ping", func(t *testing.T) {

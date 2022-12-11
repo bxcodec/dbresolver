@@ -135,6 +135,7 @@ issues:
         - goconst
         - funlen
         - gocyclo
+        - errcheck
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
     - path: loadbalancer.go
