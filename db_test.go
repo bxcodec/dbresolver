@@ -79,7 +79,7 @@ BEGIN:
 
 	t.Run("primary dbs", func(t *testing.T) {
 		for i := 0; i < noOfPrimaries*5; i++ {
-			robin := resolver.loadBalancer.Predict(noOfPrimaries)
+			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
 			switch i % 5 {
@@ -114,7 +114,7 @@ BEGIN:
 
 	t.Run("replica dbs", func(t *testing.T) {
 		for i := 0; i < noOfReplicas*5; i++ {
-			robin := resolver.loadBalancer.Predict(noOfReplicas)
+			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
 			switch i % 5 {
@@ -173,7 +173,7 @@ BEGIN:
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.Predict(noOfPrimaries)
+		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)

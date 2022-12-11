@@ -3,6 +3,7 @@ package dbresolver
 import (
 	"database/sql"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -16,12 +17,13 @@ type DBConnection interface {
 type LoadBalancer[T DBConnection] interface {
 	Resolve([]T) T
 	Name() LoadBalancerPolicy
-	Predict(n int) int
+	predict(n int) int
 }
 
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
 	randomInt int
+	sync.Mutex
 }
 
 // RandomLoadBalancer return the LB policy name
@@ -32,19 +34,23 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 // Resolve return the resolved option for Random LB
 func (lb *RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if lb.randomInt == -1 {
-		lb.Predict(len(dbs))
+		lb.predict(len(dbs))
 	}
 	randomInt := lb.randomInt
+	lb.Mutex.Lock()
 	lb.randomInt = -1
+	lb.Mutex.Unlock()
 	return dbs[randomInt]
 }
 
-func (lb *RandomLoadBalancer[T]) Predict(n int) int {
+func (lb *RandomLoadBalancer[T]) predict(n int) int {
 	rand.Seed(time.Now().UnixNano())
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
+	lb.Mutex.Lock()
 	lb.randomInt = idx
+	lb.Mutex.Unlock()
 	return idx
 }
 
@@ -71,7 +77,7 @@ func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
 	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
 
-func (lb *RoundRobinLoadBalancer[T]) Predict(n int) int {
+func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	if n <= 1 {
 		return 0
 	}
