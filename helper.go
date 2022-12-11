@@ -22,7 +22,7 @@ func doParallely(n int, fn func(i int) error) error {
 		close(errors)
 	}(wg)
 
-	arrErrs := []error{}
+	var arrErrs []error
 	for err := range errors {
 		if err != nil {
 			arrErrs = append(arrErrs, err)
