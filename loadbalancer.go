@@ -2,6 +2,7 @@ package dbresolver
 
 import (
 	"database/sql"
+	"log"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -21,7 +22,8 @@ type LoadBalancer[T DBConnection] interface {
 
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
-	randomInt atomic.Int64
+	randomInt  int
+	randomInts chan int
 }
 
 // RandomLoadBalancer return the LB policy name
@@ -31,11 +33,13 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	if lb.randomInt.Load() == -1 {
-		lb.Predict(len(dbs))
-	}
-	randomInt := lb.randomInt.Load()
-	lb.randomInt.Store(-1)
+	//if lb.randomInt == -1 {
+	//	lb.Predict(len(dbs))
+	//}
+	//randomInt := lb.randomInt
+	randomInt := <-lb.randomInts
+	lb.randomInt = -1
+	log.Println("consumed")
 	return dbs[randomInt]
 }
 
@@ -44,7 +48,9 @@ func (lb RandomLoadBalancer[T]) Predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	lb.randomInt.Store(int64(idx))
+	lb.randomInt = idx
+	lb.randomInts <- idx
+	log.Println("predicted")
 	return idx
 }
 
