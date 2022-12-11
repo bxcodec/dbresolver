@@ -111,9 +111,9 @@ BEGIN_TEST_CASE:
 
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
-				expected := mock.ExpectExec(query)
-				_, _ = resolver.Exec(query)
-				t.Log("exec", expected.String())
+				mock.ExpectExec(query)
+				resolver.Exec(query)
+				t.Log("exec")
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
@@ -238,11 +238,11 @@ BEGIN_TEST_CASE:
 
 		err := resolver.Ping()
 		if err != nil {
-			t.Errorf("got %v, want %v", err, nil)
+			t.Errorf("ping failed %s", err)
 		}
 		err = resolver.PingContext(context.TODO())
 		if err != nil {
-			t.Errorf("got %v, want %v", err, nil)
+			t.Errorf("ping failed %s", err)
 		}
 	})
 
