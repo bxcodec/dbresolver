@@ -9,7 +9,6 @@ import (
 )
 
 func TestMultiWrite(t *testing.T) {
-
 	testCases := [][2]uint{
 		{1, 0},
 		{1, 1},
@@ -86,38 +85,27 @@ BEGIN:
 			switch i % 5 {
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
-				mock.ExpectExec(query)
-				_, err := resolver.Exec(query)
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
-				t.Log("exec")
+				expected := mock.ExpectExec(query)
+				_, _ = resolver.Exec(query)
+				t.Log("exec", expected.String())
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				_, err := resolver.ExecContext(context.TODO(), query)
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
+				_, _ = resolver.ExecContext(context.TODO(), query)
 				t.Log("exec context")
 			case 2:
 				mock.ExpectBegin()
-				_, err := resolver.Begin()
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
+				_, _ = resolver.Begin()
 				t.Log("begin")
 			case 4:
 				mock.ExpectBegin()
-				_, err := resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				_, _ = resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
 				t.Log("begin transaction")
 			}
+
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
 			}
@@ -133,10 +121,8 @@ BEGIN:
 			case 0:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				_, err := resolver.Query(query)
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
+				res, _ := resolver.Query(query)
+				_ = res
 				t.Log("query")
 			case 1:
 				query := "select 1'"
@@ -146,10 +132,8 @@ BEGIN:
 			case 2:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				_, err := resolver.QueryContext(context.TODO(), query)
-				if err != nil {
-					t.Errorf("got %v, want %v", err, nil)
-				}
+				res, _ := resolver.QueryContext(context.TODO(), query)
+				_ = res
 				t.Log("query context")
 			case 4:
 				query := "select 1'"
@@ -194,10 +178,7 @@ BEGIN:
 
 		mock.ExpectExec(query)
 
-		_, err = stmt.Exec()
-		if err != nil {
-			t.Errorf("got %v, want %v", err, nil)
-		}
+		_, _ = stmt.Exec()
 	})
 
 	t.Run("ping", func(t *testing.T) {

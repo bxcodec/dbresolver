@@ -133,9 +133,10 @@ issues:
       linters:
         - gomnd
         - goconst
+        - funlen
+        - gocyclo
     - path: db_test.go
-      text: "sqlQuery: use resolver.Exec() if returned result is not needed"
-
+      text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
     - path: loadbalancer.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 run:
