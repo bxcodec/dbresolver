@@ -3,9 +3,10 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver" 
-	"go.uber.org/multierr"
+	"database/sql/driver"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // DB interface is a contract that supported by this library.
@@ -114,7 +115,6 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
 	return db.PingContext(context.Background())
-
 }
 
 // PingContext verifies if a connection to each physical database is still

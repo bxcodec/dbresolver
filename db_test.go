@@ -3,8 +3,9 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestMultiWrite(t *testing.T) {
@@ -65,7 +66,6 @@ BEGIN_TEST_CASE:
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
 	for i := 0; i < noOfPrimaries; i++ {
-
 		db, mock, err := createMock()
 
 		if err != nil {
@@ -77,7 +77,6 @@ BEGIN_TEST_CASE:
 
 		primaries[i] = db
 		mockPimaries[i] = mock
-
 	}
 
 	for i := 0; i < noOfReplicas; i++ {
@@ -103,31 +102,29 @@ BEGIN_TEST_CASE:
 			t.Log("case - ", i%4)
 
 			switch i % 4 {
-
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				resolver.Exec(query)
+				_, _ = resolver.Exec(query)
 				t.Log("exec")
 			case 1:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query)
-				resolver.ExecContext(context.TODO(), query)
+				_, _ = resolver.ExecContext(context.TODO(), query)
 				t.Log("exec context")
 			case 2:
 				mock.ExpectBegin()
-				resolver.Begin()
+				_, _ = resolver.Begin()
 				t.Log("begin")
 			case 3:
 				mock.ExpectBegin()
-				resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				_, _ = resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
 				t.Log("begin transaction")
 			default:
 				t.Fatal("developer needs to work on the tests")
-
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
@@ -143,30 +140,28 @@ BEGIN_TEST_CASE:
 			t.Log("case -", i%4)
 
 			switch i % 4 {
-
 			case 0:
 				query := "select 1'"
 				mock.ExpectQuery(query)
-				resolver.Query(query)
+				resolver.Query(query) //nolint
 				t.Log("query")
 			case 1:
 				query := "select 'row'"
 				mock.ExpectQuery(query)
-				resolver.QueryRow(query)
+				_ = resolver.QueryRow(query)
 				t.Log("query row")
 			case 2:
 				query := "select 'query-ctx' "
 				mock.ExpectQuery(query)
-				resolver.QueryContext(context.TODO(), query)
+				resolver.QueryContext(context.TODO(), query) //nolint
 				t.Log("query context")
 			case 3:
 				query := "select 'row'"
 				mock.ExpectQuery(query)
-				resolver.QueryRowContext(context.TODO(), query)
+				_ = resolver.QueryRowContext(context.TODO(), query)
 				t.Log("query row context")
 			default:
 				t.Fatal("developer needs to work on the tests")
-
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("expect failed %s", err)
@@ -205,7 +200,7 @@ BEGIN_TEST_CASE:
 
 		mock.ExpectExec(query)
 
-		stmt.Exec()
+		_, _ = stmt.Exec()
 	})
 
 	t.Run("ping", func(t *testing.T) {

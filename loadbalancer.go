@@ -36,7 +36,6 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	}
 
 	randomInt := <-lb.randInt
-	//log.Println("consumed")
 	return dbs[randomInt]
 }
 
@@ -46,7 +45,6 @@ func (lb RandomLoadBalancer[T]) predict(n int) int {
 	min := 0
 	idx := rand.Intn(max-min+1) + min
 	lb.randInt <- idx
-	//log.Println("predicted")
 	return idx
 }
 
