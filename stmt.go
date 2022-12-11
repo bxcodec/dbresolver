@@ -29,14 +29,14 @@ type stmt struct {
 // Close closes the statement by concurrently closing all underlying
 // statements concurrently, returning the first non nil error.
 func (s *stmt) Close() error {
-	errPrimary := doParallely(len(s.primaryStmts), func(i int) error {
+	errPrimaries := doParallely(len(s.primaryStmts), func(i int) error {
 		return s.primaryStmts[i].Close()
 	})
 	errReplicas := doParallely(len(s.replicaStmts), func(i int) error {
 		return s.replicaStmts[i].Close()
 	})
 
-	return multierr.Combine(errPrimary, errReplicas)
+	return multierr.Combine(errPrimaries, errReplicas)
 }
 
 // Exec executes a prepared statement with the given arguments
