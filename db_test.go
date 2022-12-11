@@ -10,22 +10,38 @@ import (
 
 func TestMultiWrite(t *testing.T) {
 
+	loadBalancerPolices := []LoadBalancerPolicy{
+		//RoundRobinLB,
+		RandomLB,
+	}
+
+	retrieveLoadBalancer := func() (loadBalancerPolicy LoadBalancerPolicy) {
+		loadBalancerPolicy = loadBalancerPolices[0]
+		loadBalancerPolices = loadBalancerPolices[1:]
+		return
+	}
+
+BEGIN_TEST:
+	loadBalancerPolicy := retrieveLoadBalancer()
+
+	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
+
 	testCases := [][2]uint{
-		{1, 0},
-		{1, 1},
+		//{1, 0},
+		//{1, 1},
 		{1, 2},
-		{1, 10},
-		{2, 0},
-		{2, 1},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{3, 6},
-		{5, 6},
-		{7, 20},
-		{10, 10},
-		{10, 20},
+		//{1, 10},
+		//{2, 0},
+		//{2, 1},
+		//{3, 0},
+		//{3, 1},
+		//{3, 2},
+		//{3, 3},
+		//{3, 6},
+		//{5, 6},
+		//{7, 20},
+		//{10, 10},
+		//{10, 20},
 	}
 
 	retrieveTestCase := func() (int, int) {
@@ -34,10 +50,13 @@ func TestMultiWrite(t *testing.T) {
 		return int(testCase[0]), int(testCase[1])
 	}
 
-BEGIN:
+BEGIN_TEST_CASE:
 
 	if len(testCases) == 0 {
-		return
+		if len(loadBalancerPolices) == 0 {
+			return
+		}
+		goto BEGIN_TEST
 	}
 
 	noOfPrimaries, noOfReplicas := retrieveTestCase()
@@ -79,7 +98,7 @@ BEGIN:
 		mockReplicas[i] = mock
 	}
 
-	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...)).(*sqlDB)
+	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(loadBalancerPolicy)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
 
@@ -236,7 +255,7 @@ BEGIN:
 
 	})
 
-	goto BEGIN
+	goto BEGIN_TEST_CASE
 
 }
 
