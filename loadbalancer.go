@@ -23,11 +23,11 @@ type LoadBalancer[T DBConnection] interface {
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
 	randomInt int
-	sync.Mutex
+	mu        sync.Mutex
 }
 
 // RandomLoadBalancer return the LB policy name
-func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
+func (lb *RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RandomLB
 }
 
@@ -37,9 +37,9 @@ func (lb *RandomLoadBalancer[T]) Resolve(dbs []T) T {
 		lb.predict(len(dbs))
 	}
 	randomInt := lb.randomInt
-	lb.Mutex.Lock()
+	lb.mu.Lock()
 	lb.randomInt = -1
-	lb.Mutex.Unlock()
+	lb.mu.Unlock()
 	return dbs[randomInt]
 }
 
@@ -48,9 +48,9 @@ func (lb *RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	lb.Mutex.Lock()
+	lb.mu.Lock()
 	lb.randomInt = idx
-	lb.Mutex.Unlock()
+	lb.mu.Unlock()
 	return idx
 }
 
