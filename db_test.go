@@ -3,9 +3,8 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"testing"
-
 	"github.com/DATA-DOG/go-sqlmock"
+	"testing"
 )
 
 func TestMultiWrite(t *testing.T) {
@@ -229,8 +228,14 @@ BEGIN_TEST_CASE:
 			}(mock)
 		}
 
-		resolver.Ping()
-		resolver.PingContext(context.TODO())
+		err := resolver.Ping()
+		if err != nil {
+			t.Errorf("ping failed %s", err)
+		}
+		err = resolver.PingContext(context.TODO())
+		if err != nil {
+			t.Errorf("ping failed %s", err)
+		}
 	})
 
 	t.Run("close", func(t *testing.T) {
