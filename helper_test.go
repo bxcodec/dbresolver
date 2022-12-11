@@ -8,7 +8,6 @@ import (
 
 func TestParallelFunction(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	seq := []int{1, 2, 3, 4, 5, 6, 7, 8}
 	err := doParallely(len(seq), func(i int) error {
 		if seq[i]%2 == 1 {
@@ -22,27 +21,11 @@ func TestParallelFunction(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	want := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	// this is the expected end result
+	want := []int{1, 2, 9, 4, 25, 6, 49, 8}
 	for i, wanted := range want {
 		if wanted != seq[i] {
 			t.Errorf("Wrong value at position %d. Want: %d, Got: %d", i, wanted, seq[i])
 		}
 	}
-
-	for i := range want { //FIXME bxcodec ? Can u figure why this test is failing at times...
-		if want[i] != seq[i] {
-			t.Errorf("Wrong value at position %d. Want: %d, Got: %d", i, want[i], seq[i])
-		}
-	}
-
-	fmt.Println("end")
-	//Output: end
 }
-
-/*=== RUN   TestParallelFunction
-    helper_test.go:28: Wrong value at position 2. Want: 3, Got: 9
-    helper_test.go:34: Wrong value at position 2. Want: 3, Got: 9
-end
---- FAIL: TestParallelFunction (0.00s)
-
-FAIL*/

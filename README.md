@@ -103,7 +103,7 @@ func ExampleWrapDBs() {
 	// configure the DBs for other setup eg, tracing, etc
 	// eg, tracing.Postgres(dbReadOnlyReplica)
 
-	connectionDB := dbresolver.NewResolver(
+	connectionDB := dbresolver.New(
 		dbresolver.WithPrimaryDBs(dbPrimary),
 		dbresolver.WithReplicaDBs(dbReadOnlyReplica),
 		dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))
