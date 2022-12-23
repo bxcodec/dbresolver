@@ -1,6 +1,9 @@
 package dbresolver
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 // LoadBalancerPolicy define the loadbalancer policy data type
 type LoadBalancerPolicy string
@@ -50,6 +53,8 @@ func WithLoadBalancer(lb LoadBalancerPolicy) OptionFunc {
 			opt.StmtLB = &RandomLoadBalancer[*sql.Stmt]{
 				randInt: make(chan int, 1),
 			}
+		default:
+			panic(fmt.Sprintf("LoadBalancer: %s is not supported", lb))
 		}
 	}
 }
