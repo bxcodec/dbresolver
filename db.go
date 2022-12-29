@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"time"
-	"unsafe"
 
 	"go.uber.org/multierr"
 )
@@ -26,8 +25,8 @@ type DB interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	Ping() error
 	PingContext(ctx context.Context) error
-	Prepare(query string) (*sql.Stmt, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+	Prepare(query string) (Stmt, error)
+	PrepareContext(ctx context.Context, query string) (Stmt, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
@@ -132,7 +131,7 @@ func (db *sqlDB) PingContext(ctx context.Context) error {
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (db *sqlDB) Prepare(query string) (_stmt *sql.Stmt, err error) {
+func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 	return db.PrepareContext(context.Background(), query)
 }
 
@@ -141,7 +140,7 @@ func (db *sqlDB) Prepare(query string) (_stmt *sql.Stmt, err error) {
 //
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.Stmt, err error) {
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -160,15 +159,12 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		return
 	}
 
-	_stmt := &stmt{
+	_stmt = &stmt{
 		db:           db,
 		loadBalancer: db.stmtLoadBalancer,
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
 	}
-
-	stmt_ = (*sql.Stmt)(unsafe.Pointer(_stmt))
-
 	return
 }
 
