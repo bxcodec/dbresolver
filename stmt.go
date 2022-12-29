@@ -11,9 +11,9 @@ import (
 // It holds a prepared statement for each underlying physical db.
 type Stmt interface {
 	Close() error
-	Exec(...interface{}) (sql.Result, error)
+	Exec(args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
-	Query(...interface{}) (*sql.Rows, error)
+	Query(args ...interface{}) (*sql.Rows, error)
 	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
 	QueryRow(args ...interface{}) *sql.Row
 	QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
