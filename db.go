@@ -195,15 +195,30 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
+			if s_.primaryStmts == nil || s_.replicaStmts == nil {
+				guard.Unpatch()
+				defer guard.Restore()
+				return s.QueryContext(ctx, args)
+			}
 			return s_.QueryContext(ctx, args)
 		})
 
 		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
 			s_ := (*stmt)(unsafe.Pointer(s))
+			if s_.primaryStmts == nil || s_.replicaStmts == nil {
+				guard.Unpatch()
+				defer guard.Restore()
+				return s.QueryRowContext(ctx, args)
+			}
 			return s_.QueryRowContext(ctx, args)
 		})
 		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
 			s_ := (*stmt)(unsafe.Pointer(s))
+			if s_.primaryStmts == nil || s_.replicaStmts == nil {
+				guard.Unpatch()
+				defer guard.Restore()
+				return s.Close()
+			}
 			return s_.Close()
 		})
 
