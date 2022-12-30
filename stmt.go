@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"go.uber.org/multierr"
-	"sync"
 )
 
 var ctx = context.Background()
@@ -26,7 +25,6 @@ type stmt struct {
 	loadBalancer StmtLoadBalancer
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
-	once         sync.Once
 }
 
 // Close closes the statement by concurrently closing all underlying
