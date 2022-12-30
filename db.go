@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"go.uber.org/multierr"
 	"reflect"
 	"sync"
@@ -153,15 +152,14 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
 		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
-		defer func() {
-			fmt.Println("going to exec-", i)
+		/*	defer func() { //FIXME remove code
 			primaryStmts[i].Exec()
-		}()
+		}()*/
 		return
 	})
 	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
 		roStmts[i], err = db.replicas[i].PrepareContext(ctx, query)
-		return err
+		return
 	})
 
 	err = multierr.Combine(errPrimaries, errReplicas)
@@ -181,11 +179,15 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	func() { //patch the instance methods
 
+		var guard *monkey.PatchGuard
+
 		//Exec uses ExecContext as well
-		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
+		guard = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil {
-				return s.Exec(ctx, args)
+				guard.Unpatch()
+				defer guard.Restore()
+				return s.ExecContext(ctx, args)
 			}
 
 			return s_.ExecContext(ctx, args)
