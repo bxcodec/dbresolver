@@ -175,7 +175,7 @@ BEGIN_TEST_CASE:
 			mock.ExpectPrepare(query)
 			defer func(i int, mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("primary-%d-expected error: %s", i, err)
+					t.Errorf("P%d: %s", i, err)
 				}
 			}(i, mock)
 		}
@@ -183,7 +183,7 @@ BEGIN_TEST_CASE:
 			mock.ExpectPrepare(query)
 			defer func(i int, mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("replica-%d-expected error: %s", i, err)
+					t.Errorf("R%d: %s", i, err)
 				}
 			}(i, mock)
 		}
