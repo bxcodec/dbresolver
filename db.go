@@ -1,12 +1,15 @@
 package dbresolver
 
 import (
+	"bou.ke/monkey"
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"time"
-
 	"go.uber.org/multierr"
+	"reflect"
+	"sync"
+	"time"
+	"unsafe"
 )
 
 // DB interface is a contract that supported by this library.
@@ -25,8 +28,8 @@ type DB interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	Ping() error
 	PingContext(ctx context.Context) error
-	Prepare(query string) (Stmt, error)
-	PrepareContext(ctx context.Context, query string) (Stmt, error)
+	Prepare(query string) (*sql.Stmt, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
@@ -131,7 +134,7 @@ func (db *sqlDB) PingContext(ctx context.Context) error {
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
+func (db *sqlDB) Prepare(query string) (_stmt *sql.Stmt, err error) {
 	return db.PrepareContext(context.Background(), query)
 }
 
@@ -140,7 +143,10 @@ func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 //
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
+
+var o sync.Once
+
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -159,12 +165,47 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 		return
 	}
 
-	_stmt = &stmt{
+	/*monkey.Patch(fmt.Println, func(a ...interface{}) (n int, err error) {
+		s := make([]interface{}, len(a))
+		for i, v := range a {
+			s[i] = strings.Replace(fmt.Sprint(v), "hell", "*bleep*", -1)
+		}
+		return fmt.Fprintln(os.Stdout, s...)
+	})*/
+
+	_stmt := &stmt{
 		db:           db,
 		loadBalancer: db.stmtLoadBalancer,
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
 	}
+
+	stmt_ = (*sql.Stmt)(unsafe.Pointer(_stmt))
+
+	func() { //patch the instance methods
+
+		//Exec uses ExecContext as well
+		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
+			s_ := (*stmt)(unsafe.Pointer(s))
+			return s_.ExecContext(ctx, args)
+		})
+
+		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+			s_ := (*stmt)(unsafe.Pointer(s))
+			return s_.QueryContext(ctx, args)
+		})
+
+		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
+			s_ := (*stmt)(unsafe.Pointer(s))
+			return s_.QueryRowContext(ctx, args)
+		})
+		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
+			s_ := (*stmt)(unsafe.Pointer(s))
+			return s_.Close()
+		})
+
+	}()
+
 	return
 }
 
