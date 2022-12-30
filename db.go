@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"go.uber.org/multierr"
-	"log"
 	"reflect"
 	"sync"
 	"time"
@@ -153,6 +153,10 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
 		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
+		defer func() {
+			fmt.Println("going to exec-", i)
+			primaryStmts[i].Exec()
+		}()
 		return
 	})
 	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
@@ -181,7 +185,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil {
-				log.Fatalln("primary nil")
+				return s.Exec(ctx, args)
 			}
 
 			return s_.ExecContext(ctx, args)
