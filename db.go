@@ -184,7 +184,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		//Exec uses ExecContext as well
 		guard = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
-			if s_.primaryStmts == nil {
+			if s_.primaryStmts == nil || s_.replicaStmts == nil {
 				guard.Unpatch()
 				defer guard.Restore()
 				return s.ExecContext(ctx, args)
