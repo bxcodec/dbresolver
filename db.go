@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"go.uber.org/multierr"
+	"log"
 	"reflect"
 	"sync"
 	"time"
@@ -179,6 +180,10 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		//Exec uses ExecContext as well
 		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
+			if s_.primaryStmts == nil {
+				log.Fatalln("primary nil")
+			}
+
 			return s_.ExecContext(ctx, args)
 		})
 
