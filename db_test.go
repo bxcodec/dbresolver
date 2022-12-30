@@ -175,7 +175,7 @@ BEGIN_TEST_CASE:
 			mock.ExpectPrepare(query)
 			defer func(i int, mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("%d-expected error: %s", i, err)
+					t.Errorf("primary-%d-expected error: %s", i, err)
 				}
 			}(i, mock)
 		}
@@ -183,23 +183,23 @@ BEGIN_TEST_CASE:
 			mock.ExpectPrepare(query)
 			defer func(i int, mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("%d-expected error: %s", i, err)
+					t.Errorf("replica-%d-expected error: %s", i, err)
 				}
 			}(i, mock)
 		}
 
-		stmt, err := resolver.Prepare(query)
+		_, err := resolver.Prepare(query)
 		if err != nil {
 			t.Error("prepare failed")
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
+		/*robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)
 
-		stmt.Exec()
+		stmt.ExecContext(ctx)*/
 	})
 
 	/*	t.Run("ping", func(t *testing.T) {
