@@ -179,44 +179,47 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	func() { //patch the instance methods
 
-		var guard *monkey.PatchGuard
+		var guardExec *monkey.PatchGuard
+		var guardQuery *monkey.PatchGuard
+		var guardQueryRow *monkey.PatchGuard
+		var guardClose *monkey.PatchGuard
 
 		//Exec uses ExecContext as well
-		guard = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
+		guardExec = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil || s_.replicaStmts == nil {
-				guard.Unpatch()
-				defer guard.Restore()
+				guardExec.Unpatch()
+				defer guardExec.Restore()
 				return s.ExecContext(ctx, args)
 			}
 
 			return s_.ExecContext(ctx, args)
 		})
 
-		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+		guardQuery = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil || s_.replicaStmts == nil {
-				guard.Unpatch()
-				defer guard.Restore()
+				guardQuery.Unpatch()
+				defer guardQuery.Restore()
 				return s.QueryContext(ctx, args)
 			}
 			return s_.QueryContext(ctx, args)
 		})
 
-		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
+		guardQueryRow = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil || s_.replicaStmts == nil {
-				guard.Unpatch()
-				defer guard.Restore()
+				guardQueryRow.Unpatch()
+				defer guardQueryRow.Restore()
 				return s.QueryRowContext(ctx, args)
 			}
 			return s_.QueryRowContext(ctx, args)
 		})
-		monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
+		guardClose = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
 			s_ := (*stmt)(unsafe.Pointer(s))
 			if s_.primaryStmts == nil || s_.replicaStmts == nil {
-				guard.Unpatch()
-				defer guard.Restore()
+				guardClose.Unpatch()
+				defer guardClose.Restore()
 				return s.Close()
 			}
 			return s_.Close()

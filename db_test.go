@@ -188,18 +188,18 @@ BEGIN_TEST_CASE:
 			}(i, mock)
 		}
 
-		_, err := resolver.Prepare(query)
+		stmt, err := resolver.Prepare(query)
 		if err != nil {
 			t.Error("prepare failed")
 			return
 		}
 
-		/*robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
+		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)
 
-		stmt.ExecContext(ctx)*/
+		stmt.ExecContext(ctx)
 	})
 
 	/*	t.Run("ping", func(t *testing.T) {
