@@ -134,7 +134,7 @@ func (db *sqlDB) PingContext(ctx context.Context) error {
 
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
-func (db *sqlDB) Prepare(query string) (_stmt *sql.Stmt, err error) {
+func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 	return db.PrepareContext(context.Background(), query)
 }
 
