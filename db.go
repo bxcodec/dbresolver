@@ -7,7 +7,6 @@ import (
 	"database/sql/driver"
 	"go.uber.org/multierr"
 	"reflect"
-	"sync"
 	"time"
 	"unsafe"
 )
@@ -144,8 +143,6 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 
-var o sync.Once
-
 func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
@@ -186,46 +183,46 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		var guardQueryRow *monkey.PatchGuard
 		var guardClose *monkey.PatchGuard
 
-		//Exec uses ExecContext as well
+		// Exec uses ExecContext as well. Same applies to Query,QueryRow
 		guardExec = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
-			s_ := (*stmt)(unsafe.Pointer(s))
-			if s_.primaryStmts == nil {
+			_stmt := (*stmt)(unsafe.Pointer(s))
+			if _stmt.primaryStmts == nil {
 				guardExec.Unpatch()
 				defer guardExec.Restore()
 
 				return s.ExecContext(ctx, args...)
 			}
 
-			return s_.ExecContext(ctx, args...)
+			return _stmt.ExecContext(ctx, args...)
 		})
 
 		guardQuery = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-			s_ := (*stmt)(unsafe.Pointer(s))
-			if s_.primaryStmts == nil {
+			_stmt := (*stmt)(unsafe.Pointer(s))
+			if _stmt.primaryStmts == nil {
 				guardQuery.Unpatch()
 				defer guardQuery.Restore()
 				return s.QueryContext(ctx, args...)
 			}
-			return s_.QueryContext(ctx, args...)
+			return _stmt.QueryContext(ctx, args...)
 		})
 
 		guardQueryRow = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
-			s_ := (*stmt)(unsafe.Pointer(s))
-			if s_.primaryStmts == nil {
+			_stmt := (*stmt)(unsafe.Pointer(s))
+			if _stmt.primaryStmts == nil {
 				guardQueryRow.Unpatch()
 				defer guardQueryRow.Restore()
 				return s.QueryRowContext(ctx, args...)
 			}
-			return s_.QueryRowContext(ctx, args...)
+			return _stmt.QueryRowContext(ctx, args...)
 		})
 		guardClose = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
-			s_ := (*stmt)(unsafe.Pointer(s))
-			if s_.primaryStmts == nil {
+			_stmt := (*stmt)(unsafe.Pointer(s))
+			if _stmt.primaryStmts == nil {
 				guardClose.Unpatch()
 				defer guardClose.Restore()
 				return s.Close()
 			}
-			return s_.Close()
+			return _stmt.Close()
 		})
 
 	}()
