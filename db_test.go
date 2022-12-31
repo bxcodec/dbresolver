@@ -10,7 +10,7 @@ import (
 
 func TestMultiWrite(t *testing.T) {
 	loadBalancerPolices := []LoadBalancerPolicy{
-		//RoundRobinLB, //FIXME
+		RoundRobinLB,
 		RandomLB,
 	}
 
