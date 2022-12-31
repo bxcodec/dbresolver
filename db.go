@@ -143,8 +143,7 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 
-// PrepareContext returns a fauStmt ie *stmt casted as type *sql.Stmt
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql.Stmt, err error) {
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -170,7 +169,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 		replicaStmts: roStmts,
 	}
 
-	fauStmt = (*sql.Stmt)(unsafe.Pointer(_stmt))
+	stmt1 = (*sql.Stmt)(unsafe.Pointer(_stmt))
 
 	/* Patch sql instance method
 	Distinguishing *sql.Stmt or *stmt.
