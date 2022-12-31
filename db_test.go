@@ -63,7 +63,7 @@ BEGIN_TEST_CASE:
 	primaries := make([]*sql.DB, noOfPrimaries)
 	replicas := make([]*sql.DB, noOfReplicas)
 
-	mockPimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
+	mockPrimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
 	for i := 0; i < noOfPrimaries; i++ {
@@ -77,7 +77,7 @@ BEGIN_TEST_CASE:
 		defer db.Close()
 
 		primaries[i] = db
-		mockPimaries[i] = mock
+		mockPrimaries[i] = mock
 	}
 
 	for i := 0; i < noOfReplicas; i++ {
@@ -98,7 +98,7 @@ BEGIN_TEST_CASE:
 	t.Run("primary dbs", func(t *testing.T) {
 		for i := 0; i < noOfPrimaries*5; i++ {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
-			mock := mockPimaries[robin]
+			mock := mockPrimaries[robin]
 
 			//t.Log("case - ", i%4)
 
@@ -173,7 +173,7 @@ BEGIN_TEST_CASE:
 	t.Run("prepare", func(t *testing.T) {
 		query := "select 1"
 
-		for i, mock := range mockPimaries {
+		for i, mock := range mockPrimaries {
 			mock.ExpectPrepare(query)
 			defer func(i int, mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
@@ -201,7 +201,7 @@ BEGIN_TEST_CASE:
 			return
 		}
 
-		mock := getMock(mockPimaries)
+		mock := getMock(mockPrimaries)
 		mock.ExpectExec(query)
 		_, err = stmt.Exec()
 
@@ -211,7 +211,7 @@ BEGIN_TEST_CASE:
 
 		t.Run("primary stmts", func(t *testing.T) {
 			for i := 0; i < noOfPrimaries*5; i++ {
-				mock := getMock(mockPimaries)
+				mock := getMock(mockPrimaries)
 
 				//t.Log("case - ", i%3)
 
@@ -283,7 +283,7 @@ BEGIN_TEST_CASE:
 	})
 
 	t.Run("ping", func(t *testing.T) {
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectPing()
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
@@ -311,7 +311,7 @@ BEGIN_TEST_CASE:
 	})
 
 	t.Run("close", func(t *testing.T) {
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectClose()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
