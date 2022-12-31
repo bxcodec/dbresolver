@@ -11,7 +11,7 @@ import (
 func TestMultiWrite(t *testing.T) {
 	loadBalancerPolices := []LoadBalancerPolicy{
 		RoundRobinLB,
-		RandomLB,
+		//RandomLB,
 	}
 
 	retrieveLoadBalancer := func() (loadBalancerPolicy LoadBalancerPolicy) {
