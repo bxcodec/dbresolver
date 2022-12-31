@@ -53,14 +53,6 @@ func (lb RandomLoadBalancer[T]) predict(n int) int {
 	lb.randInt <- idx
 	lb.rw.Unlock()
 
-	/*	go func() {
-		time.Sleep(2 * time.Second)
-		if lb.rw.TryLock() && len(lb.randInt) > 0 {
-			<-lb.randInt
-			lb.rw.Unlock()
-		}
-	}()*/
-
 	return idx
 }
 
