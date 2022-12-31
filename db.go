@@ -174,10 +174,11 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	stmt_ = (*sql.Stmt)(unsafe.Pointer(_stmt))
 
-	//patch sql instance method
-	//how to distinguish whether an object is instance of *sql.Stmt or stmt ?
-	//Solution - stmts are created in this method & make is used for primaryStmts & replicaStmts
-	//when *sql.Stmt is type casted to stmt, value of the primary&replicaStmts resolve to zero value i.e nil
+	// Patch sql instance method
+	// Distinguishing *sql.Stmt or *stmt.
+	// Solution - stmts are created in this method & make is used for primaryStmts &
+	// replicaStmts when *sql.Stmt is type casted to stmt, value of the
+	// primary&replicaStmts resolve to zero value i.e nil
 	func() {
 
 		var guardExec *monkey.PatchGuard
