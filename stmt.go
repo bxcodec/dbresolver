@@ -90,8 +90,7 @@ func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Ro
 
 // ROStmt return the replica statement
 func (s *stmt) ROStmt() *sql.Stmt {
-	totalStmtsConn := len(s.replicaStmts) + len(s.primaryStmts)
-	if totalStmtsConn == len(s.primaryStmts) {
+	if len(s.replicaStmts) == 0 {
 		return s.loadBalancer.Resolve(s.primaryStmts)
 	}
 	return s.loadBalancer.Resolve(s.replicaStmts)

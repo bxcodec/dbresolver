@@ -3,6 +3,7 @@ package dbresolver
 import (
 	"database/sql"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -22,6 +23,7 @@ type LoadBalancer[T DBConnection] interface {
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
 	randInt chan int
+	rw      sync.RWMutex
 }
 
 // RandomLoadBalancer return the LB policy name
@@ -35,7 +37,9 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 		lb.predict(len(dbs))
 	}
 
+	lb.rw.RLock()
 	randomInt := <-lb.randInt
+	lb.rw.RUnlock()
 	return dbs[randomInt]
 }
 
@@ -44,9 +48,19 @@ func (lb RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	go func() {
-		lb.randInt <- idx
-	}()
+
+	lb.rw.Lock()
+	lb.randInt <- idx
+	lb.rw.Unlock()
+
+	/*	go func() {
+		time.Sleep(2 * time.Second)
+		if lb.rw.TryLock() && len(lb.randInt) > 0 {
+			<-lb.randInt
+			lb.rw.Unlock()
+		}
+	}()*/
+
 	return idx
 }
 

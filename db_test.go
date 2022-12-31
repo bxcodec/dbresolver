@@ -28,20 +28,20 @@ BEGIN_TEST:
 	testCases := [][2]uint{
 		{1, 0},
 		{1, 1},
-		/*		{1, 2},
-				{1, 10},
-				{2, 0},
-				{2, 1},
-				{2, 2},
-				{3, 0},
-				{3, 1},
-				{3, 2},
-				{3, 3},
-				{3, 6},
-				{5, 6},
-				{7, 20},
-				{10, 10},
-				{10, 20},*/
+		{1, 2},
+		{1, 10},
+		{2, 0},
+		{2, 1},
+		{2, 2},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
+		{3, 6},
+		{5, 6},
+		{7, 20},
+		{10, 10},
+		{10, 20},
 	}
 
 	retrieveTestCase := func() (int, int) {
@@ -215,7 +215,7 @@ BEGIN_TEST_CASE:
 
 				// t.Log("case - ", i%3)
 
-				switch i % 4 {
+				switch i % 2 { //should be ..
 				case 0:
 					mock.ExpectExec(query)
 					stmt.Exec()
@@ -229,12 +229,16 @@ BEGIN_TEST_CASE:
 						mock.ExpectQuery(query)
 						stmt.Query()
 						t.Log("query")
+					} else {
+						stmt.Exec() // predict is filling up the channel
 					}
 				case 3:
 					if noOfReplicas == 0 {
 						mock.ExpectQuery(query)
 						stmt.QueryRow()
 						t.Log("query row")
+					} else {
+						stmt.Exec() // predict is filling up the channel
 					}
 				default:
 					t.Fatal("developer needs to work on the tests")
