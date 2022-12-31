@@ -152,9 +152,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 
 	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
 		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
-		/*	defer func() { //FIXME remove code
-			primaryStmts[i].Exec()
-		}()*/
 		return
 	})
 	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
