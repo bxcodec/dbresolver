@@ -215,7 +215,7 @@ BEGIN_TEST_CASE:
 
 				// t.Log("case - ", i%3)
 
-				switch i % 2 { //should be ..
+				switch i % 4 {
 				case 0:
 					mock.ExpectExec(query)
 					stmt.Exec()

@@ -179,6 +179,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.S
 	Solution - stmts are created in this method & make is used for primaryStmts &
 	replicaStmts when *sql.Stmt is type casted to stmt, value of the
 	primary&replicaStmts resolve to zero value i.e nil*/
+
 	var patchStmtMethods = func() {
 
 		var guardExec *monkey.PatchGuard
