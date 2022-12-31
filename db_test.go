@@ -280,7 +280,6 @@ BEGIN_TEST_CASE:
 		if err := stmt.Close(); err != nil {
 			t.Errorf("[close] %s", err)
 		}
-
 	})
 
 	t.Run("ping", func(t *testing.T) {

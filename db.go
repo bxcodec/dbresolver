@@ -143,7 +143,7 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.Stmt, err error) {
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -169,13 +169,13 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		replicaStmts: roStmts,
 	}
 
-	stmt_ = (*sql.Stmt)(unsafe.Pointer(_stmt))
+	stmt1 = (*sql.Stmt)(unsafe.Pointer(_stmt))
 
-	// Patch sql instance method
-	// Distinguishing *sql.Stmt or *stmt.
-	// Solution - stmts are created in this method & make is used for primaryStmts &
-	// replicaStmts when *sql.Stmt is type casted to stmt, value of the
-	// primary&replicaStmts resolve to zero value i.e nil
+	/*	// Patch sql instance method
+		// Distinguishing *sql.Stmt or *stmt.
+		// Solution - stmts are created in this method & make is used for primaryStmts &
+		// replicaStmts when *sql.Stmt is type casted to stmt, value of the
+		// primary&replicaStmts resolve to zero value i.e nil*/
 	func() {
 
 		var guardExec *monkey.PatchGuard
@@ -183,8 +183,11 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 		var guardQueryRow *monkey.PatchGuard
 		var guardClose *monkey.PatchGuard
 
+		stmtInstance := &sql.Stmt{}
+		stmtInstanceType := reflect.TypeOf(stmtInstance)
+
 		// Exec uses ExecContext as well. Same applies to Query,QueryRow
-		guardExec = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
+		guardExec = monkey.PatchInstanceMethod(stmtInstanceType, "ExecContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
 			_stmt := (*stmt)(unsafe.Pointer(s))
 			if _stmt.primaryStmts == nil {
 				guardExec.Unpatch()
@@ -196,7 +199,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 			return _stmt.ExecContext(ctx, args...)
 		})
 
-		guardQuery = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+		guardQuery = monkey.PatchInstanceMethod(stmtInstanceType, "QueryContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 			_stmt := (*stmt)(unsafe.Pointer(s))
 			if _stmt.primaryStmts == nil {
 				guardQuery.Unpatch()
@@ -206,7 +209,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 			return _stmt.QueryContext(ctx, args...)
 		})
 
-		guardQueryRow = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
+		guardQueryRow = monkey.PatchInstanceMethod(stmtInstanceType, "QueryRowContext", func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
 			_stmt := (*stmt)(unsafe.Pointer(s))
 			if _stmt.primaryStmts == nil {
 				guardQueryRow.Unpatch()
@@ -215,7 +218,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 			}
 			return _stmt.QueryRowContext(ctx, args...)
 		})
-		guardClose = monkey.PatchInstanceMethod(reflect.TypeOf(stmt_), "Close", func(s *sql.Stmt) error {
+		guardClose = monkey.PatchInstanceMethod(stmtInstanceType, "Close", func(s *sql.Stmt) error {
 			_stmt := (*stmt)(unsafe.Pointer(s))
 			if _stmt.primaryStmts == nil {
 				guardClose.Unpatch()
@@ -224,9 +227,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt_ *sql.S
 			}
 			return _stmt.Close()
 		})
-
 	}()
-
 	return
 }
 
