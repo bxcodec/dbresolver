@@ -1,6 +1,7 @@
 package dbresolver
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -25,21 +26,21 @@ BEGIN_TEST:
 	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
 
 	testCases := [][2]uint{
-		{1, 0},
-		/*	{1, 1},
-			{1, 2},
-			{1, 10},
-			{2, 0},
-			{2, 1},
-			{3, 0},
-			{3, 1},
-			{3, 2},
-			{3, 3},
-			{3, 6},
-			{5, 6},
-			{7, 20},
-			{10, 10},
-			{10, 20},*/
+		//{1, 0},
+		//{1, 1},
+		{1, 2},
+		/*		{1, 10},
+				{2, 0},
+				{2, 1},
+				{3, 0},
+				{3, 1},
+				{3, 2},
+				{3, 3},
+				{3, 6},
+				{5, 6},
+				{7, 20},
+				{10, 10},
+				{10, 20},*/
 	}
 
 	retrieveTestCase := func() (int, int) {
@@ -194,69 +195,141 @@ BEGIN_TEST_CASE:
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
-		mock := mockPimaries[robin]
+		var getMock = func(mockDBs []sqlmock.Sqlmock) (mock sqlmock.Sqlmock) {
+			robin := resolver.stmtLoadBalancer.predict(len(mockDBs))
+			mock = mockDBs[robin]
+			return
+		}
 
+		mock := getMock(mockPimaries)
 		mock.ExpectExec(query)
-
-		_, err = stmt.ExecContext(ctx)
+		_, err = stmt.Exec()
 
 		if err != nil {
-			t.Log("error in exec", err)
+			t.Logf("[prepare] %s", err)
 		}
-	})
 
-	/*	t.Run("ping", func(t *testing.T) {
-			for _, mock := range mockPimaries {
-				mock.ExpectPing()
-				mock.ExpectPing()
-				defer func(mock sqlmock.Sqlmock) {
-					if err := mock.ExpectationsWereMet(); err != nil {
-						t.Errorf("there were unfulfilled expectations: %s", err)
-					}
-				}(mock)
-			}
-			for _, mock := range mockReplicas {
-				mock.ExpectPing()
-				mock.ExpectPing()
-				defer func(mock sqlmock.Sqlmock) {
-					if err := mock.ExpectationsWereMet(); err != nil {
-						t.Errorf("there were unfulfilled expectations: %s", err)
-					}
-				}(mock)
-			}
+		t.Run("primary stmts", func(t *testing.T) {
+			for i := 0; i < noOfPrimaries*5; i++ {
+				mock := getMock(mockPimaries)
 
-			err := resolver.Ping()
-			if err != nil {
-				t.Errorf("ping failed %s", err)
-			}
-			err = resolver.PingContext(context.TODO())
-			if err != nil {
-				t.Errorf("ping failed %s", err)
+				t.Log("case - ", i%3)
+
+				switch i % 3 {
+				case 0:
+					mock.ExpectExec(query)
+					stmt.Exec()
+					t.Log("exec")
+				case 1:
+					mock.ExpectExec(query)
+					stmt.ExecContext(ctx)
+					t.Log("exec context")
+				case 2:
+					if noOfReplicas == 0 {
+						mock.ExpectQuery(query)
+						stmt.Query()
+						t.Log("query")
+						mock.ExpectQuery(query)
+						stmt.QueryRow()
+						t.Log("query row")
+					}
+				default:
+					t.Fatal("developer needs to work on the tests")
+				}
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
 			}
 		})
 
-		t.Run("close", func(t *testing.T) {
-			for _, mock := range mockPimaries {
-				mock.ExpectClose()
-				defer func(mock sqlmock.Sqlmock) {
-					if err := mock.ExpectationsWereMet(); err != nil {
-						t.Errorf("there were unfulfilled expectations: %s", err)
-					}
-				}(mock)
-			}
-			for _, mock := range mockReplicas {
-				mock.ExpectClose()
-				defer func(mock sqlmock.Sqlmock) {
-					if err := mock.ExpectationsWereMet(); err != nil {
-						t.Errorf("there were unfulfilled expectations: %s", err)
-					}
-				}(mock)
-			}
-			resolver.Close()
+		t.Run("replica stmts", func(t *testing.T) {
+			for i := 0; i < noOfReplicas*5; i++ {
+				robin := resolver.loadBalancer.predict(noOfReplicas)
+				mock := mockReplicas[robin]
 
-			t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
-		})*/
+				t.Log("case -", i%4)
+
+				switch i % 4 {
+				case 0:
+					mock.ExpectQuery(query)
+					stmt.Query()
+					t.Log("query")
+				case 1:
+					mock.ExpectQuery(query)
+					stmt.QueryContext(ctx)
+					t.Log("query ctx")
+				case 2:
+					mock.ExpectQuery(query)
+					stmt.QueryRow()
+					t.Log("row")
+				case 3:
+					mock.ExpectQuery(query)
+					stmt.QueryRowContext(ctx)
+					t.Log("row context")
+				default:
+					t.Fatal("developer needs to work on the tests")
+				}
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("expect failed %s", err)
+				}
+			}
+		})
+
+		if err := stmt.Close(); err != nil {
+			t.Errorf("[close] %s", err)
+		}
+
+	})
+
+	t.Run("ping", func(t *testing.T) {
+		for _, mock := range mockPimaries {
+			mock.ExpectPing()
+			mock.ExpectPing()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectPing()
+			mock.ExpectPing()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+
+		if err := resolver.Ping(); err != nil {
+			t.Errorf("ping failed %s", err)
+		}
+		if err := resolver.PingContext(context.TODO()); err != nil {
+			t.Errorf("ping failed %s", err)
+		}
+	})
+
+	t.Run("close", func(t *testing.T) {
+		for _, mock := range mockPimaries {
+			mock.ExpectClose()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectClose()
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("there were unfulfilled expectations: %s", err)
+				}
+			}(mock)
+		}
+		resolver.Close()
+
+		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
+	})
 
 	goto BEGIN_TEST_CASE
 }
