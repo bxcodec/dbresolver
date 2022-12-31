@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"go.uber.org/multierr"
 	"reflect"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -143,6 +144,8 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 
+var once sync.Once
+
 func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
@@ -176,7 +179,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.S
 	Solution - stmts are created in this method & make is used for primaryStmts &
 	replicaStmts when *sql.Stmt is type casted to stmt, value of the
 	primary&replicaStmts resolve to zero value i.e nil*/
-	func() {
+	var patchStmtMethods = func() {
 
 		var guardExec *monkey.PatchGuard
 		var guardQuery *monkey.PatchGuard
@@ -240,7 +243,9 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.S
 				}
 				return _stmt.Close()
 			})
-	}()
+	}
+	once.Do(patchStmtMethods)
+
 	return
 }
 
