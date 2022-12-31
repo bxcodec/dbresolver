@@ -32,6 +32,7 @@ BEGIN_TEST:
 		{1, 10},
 		{2, 0},
 		{2, 1},
+		{2, 2},
 		{3, 0},
 		{3, 1},
 		{3, 2},
@@ -99,7 +100,7 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			t.Log("case - ", i%4)
+			//t.Log("case - ", i%4)
 
 			switch i % 4 {
 			case 0:
@@ -137,7 +138,7 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
-			t.Log("case -", i%4)
+			//t.Log("case -", i%4)
 
 			switch i % 4 {
 			case 0:
@@ -191,8 +192,7 @@ BEGIN_TEST_CASE:
 
 		stmt, err := resolver.Prepare(query)
 		if err != nil {
-			t.Error("prepare failed")
-			return
+			t.Fatalf("[prepare] failed %s", err)
 		}
 
 		var getMock = func(mockDBs []sqlmock.Sqlmock) (mock sqlmock.Sqlmock) {
@@ -213,9 +213,9 @@ BEGIN_TEST_CASE:
 			for i := 0; i < noOfPrimaries*5; i++ {
 				mock := getMock(mockPimaries)
 
-				t.Log("case - ", i%3)
+				//t.Log("case - ", i%3)
 
-				switch i % 3 {
+				switch i % 4 {
 				case 0:
 					mock.ExpectExec(query)
 					stmt.Exec()
@@ -229,6 +229,9 @@ BEGIN_TEST_CASE:
 						mock.ExpectQuery(query)
 						stmt.Query()
 						t.Log("query")
+					}
+				case 3:
+					if noOfReplicas == 0 {
 						mock.ExpectQuery(query)
 						stmt.QueryRow()
 						t.Log("query row")
@@ -246,7 +249,7 @@ BEGIN_TEST_CASE:
 			for i := 0; i < noOfReplicas*5; i++ {
 				mock := getMock(mockReplicas)
 
-				t.Log("case -", i%4)
+				//t.Log("case -", i%4)
 
 				switch i % 4 {
 				case 0:
@@ -301,7 +304,7 @@ BEGIN_TEST_CASE:
 		}
 
 		if err := resolver.Ping(); err != nil {
-			t.Errorf("ping failed %s", err)
+			t.Errorf("ping failed %s for %dP%dR", err, noOfPrimaries, noOfReplicas)
 		}
 		if err := resolver.PingContext(context.TODO()); err != nil {
 			t.Errorf("ping failed %s", err)
