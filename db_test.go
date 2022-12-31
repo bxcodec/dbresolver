@@ -100,7 +100,7 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPrimaries[robin]
 
-			//t.Log("case - ", i%4)
+			// t.Log("case - ", i%4)
 
 			switch i % 4 {
 			case 0:
@@ -138,7 +138,7 @@ BEGIN_TEST_CASE:
 			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
-			//t.Log("case -", i%4)
+			// t.Log("case -", i%4)
 
 			switch i % 4 {
 			case 0:
@@ -213,7 +213,7 @@ BEGIN_TEST_CASE:
 			for i := 0; i < noOfPrimaries*5; i++ {
 				mock := getMock(mockPrimaries)
 
-				//t.Log("case - ", i%3)
+				// t.Log("case - ", i%3)
 
 				switch i % 4 {
 				case 0:
@@ -249,7 +249,7 @@ BEGIN_TEST_CASE:
 			for i := 0; i < noOfReplicas*5; i++ {
 				mock := getMock(mockReplicas)
 
-				//t.Log("case -", i%4)
+				// t.Log("case -", i%4)
 
 				switch i % 4 {
 				case 0:
