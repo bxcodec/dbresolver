@@ -146,7 +146,7 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 
 var once sync.Once
 
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql.Stmt, err error) {
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -172,7 +172,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 		replicaStmts: roStmts,
 	}
 
-	fauStmt = (*sql.Stmt)(unsafe.Pointer(_stmt))
+	stmt1 = (*sql.Stmt)(unsafe.Pointer(_stmt))
 
 	/* Patch sql instance method
 	Distinguishing *sql.Stmt or *stmt.
@@ -187,11 +187,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 		var guardQueryRow *monkey.PatchGuard
 		var guardClose *monkey.PatchGuard
 
-		var mwExec sync.Mutex
-		var mwQuery sync.Mutex
-		var mwQueryRow sync.Mutex
-		var mwClose sync.Mutex
-
 		stmtInstance := &sql.Stmt{}
 		stmtType := reflect.TypeOf(stmtInstance)
 
@@ -200,8 +195,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 			stmtType,
 			"ExecContext",
 			func(s *sql.Stmt, ctx context.Context, args ...interface{}) (sql.Result, error) {
-				mwExec.Lock()
-				defer mwExec.Unlock()
 				_stmt := (*stmt)(unsafe.Pointer(s))
 				if _stmt.primaryStmts == nil {
 					guardExec.Unpatch()
@@ -217,8 +210,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 			stmtType,
 			"QueryContext",
 			func(s *sql.Stmt, ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-				mwQuery.Lock()
-				defer mwQuery.Unlock()
 				_stmt := (*stmt)(unsafe.Pointer(s))
 				if _stmt.primaryStmts == nil {
 					guardQuery.Unpatch()
@@ -232,8 +223,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 			stmtType,
 			"QueryRowContext",
 			func(s *sql.Stmt, ctx context.Context, args ...interface{}) *sql.Row {
-				mwQueryRow.Lock()
-				defer mwQueryRow.Unlock()
 				_stmt := (*stmt)(unsafe.Pointer(s))
 				if _stmt.primaryStmts == nil {
 					guardQueryRow.Unpatch()
@@ -247,8 +236,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql
 			stmtType,
 			"Close",
 			func(s *sql.Stmt) error {
-				mwClose.Lock()
-				defer mwClose.Unlock()
 				_stmt := (*stmt)(unsafe.Pointer(s))
 				if _stmt.primaryStmts == nil {
 					guardClose.Unpatch()
