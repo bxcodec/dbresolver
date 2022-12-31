@@ -11,6 +11,7 @@ This DBResolver library will split your connections to correct defined DBs. Eg, 
 
 Read more for the explanation on this [blog post](https://betterprogramming.pub/create-a-cross-region-rdbms-connection-library-with-dbresolver-5072bed6a7b8)
 
+Excalidraw live [diagram](https://excalidraw.com/#json=DTs8yxHOGF6uLkjnZny4z,RVo8iwhO0Rk6DRGkKuNZTg)
 ### Usecase 1: Separated RW and RO Database connection
 
 <details open>
@@ -21,11 +22,11 @@ Read more for the explanation on this [blog post](https://betterprogramming.pub/
 - Your application is heavy on read operations
 - Your DBs replicated to multiple replicas for faster queries
 - You separate the connections for optimized query
-- ![image](https://user-images.githubusercontent.com/11002383/180010864-c9e2a0b6-520d-48d6-bf0d-490eb070e75d.png)
+- ![readonly-readwrite](https://user-images.githubusercontent.com/11002383/206952018-dd393059-c42c-4ffc-913a-f21c3870bd80.png)
 
 </details>
 
-### Usecases 2: Cross Region Database
+### Usecase 2: Cross Region Database
 
 <details open>
 
@@ -33,7 +34,18 @@ Read more for the explanation on this [blog post](https://betterprogramming.pub/
 
 - Your application deployed to multi regions.
 - You have your Databases configured globally.
-- ![image](https://user-images.githubusercontent.com/11002383/179894026-7206cbb8-35d7-4fd9-9ce9-4e62bf1ec156.png)
+- ![cross-region](https://user-images.githubusercontent.com/11002383/206952598-ed21a6f8-5542-4f26-aaa6-67d9c2aa5940.png)
+
+</details>
+
+### Usecase 3: Multi-Master (Multi-Primary) Database
+
+<details open>
+
+<summary>Click to Expand</summary>
+  
+- You're using a Multi-Master database topology eg, Aurora Multi-Master
+- ![multi-master](https://user-images.githubusercontent.com/11002383/206953082-c2b1bfa8-050e-4a6e-88e8-e5c7047edd71.png)
 
 </details>
 
@@ -59,50 +71,63 @@ go get -u github.com/bxcodec/dbresolver/v2
 <summary>Click to Expand</summary>
 
 ```go
-var (
-  host1     = "localhost"
-  port1     = 5432
-  user1     = "postgresrw"
-  password1 = "<password>"
-  host2     = "localhost"
-  port2     = 5433
-  user2     = "postgresro"
-  password2 = "<password>"
-  dbname    = "<dbname>"
+package main
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"log"
+
+	"github.com/bxcodec/dbresolver/v2"
+	_ "github.com/lib/pq"
 )
-// connection string
-rwPrimary := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host1, port1, user1, password1, dbname)
-readOnlyReplica := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host2, port2, user2, password2, dbname)
 
-// open database for primary
-dbPrimary, err := sql.Open("postgres", rwPrimary)
-if err != nil {
-    log.Print("go error when connecting to the DB")
+func main() {
+	var (
+		host1     = "localhost"
+		port1     = 5432
+		user1     = "postgresrw"
+		password1 = "<password>"
+		host2     = "localhost"
+		port2     = 5433
+		user2     = "postgresro"
+		password2 = "<password>"
+		dbname    = "<dbname>"
+	)
+	// connection string
+	rwPrimary := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host1, port1, user1, password1, dbname)
+	readOnlyReplica := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host2, port2, user2, password2, dbname)
+
+	// open database for primary
+	dbPrimary, err := sql.Open("postgres", rwPrimary)
+	if err != nil {
+		log.Print("go error when connecting to the DB")
+	}
+	// configure the DBs for other setup eg, tracing, etc
+	// eg, tracing.Postgres(dbPrimary)
+
+	// open database for replica
+	dbReadOnlyReplica, err := sql.Open("postgres", readOnlyReplica)
+	if err != nil {
+		log.Print("go error when connecting to the DB")
+	}
+	// configure the DBs for other setup eg, tracing, etc
+	// eg, tracing.Postgres(dbReadOnlyReplica)
+
+	connectionDB := dbresolver.New(
+		dbresolver.WithPrimaryDBs(dbPrimary),
+		dbresolver.WithReplicaDBs(dbReadOnlyReplica),
+		dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))
+
+	defer connectionDB.Close()
+	// now you can use the connection for all DB operation
+	_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
+	if err != nil {
+		log.Print("go error when executing the query to the DB", err)
+	}
+	connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1") // will use replicaReadOnlyDB
 }
-// configure the DBs for other setup eg, tracing, etc
-// eg, tracing.Postgres(dbPrimary)
-
-// open database for replica
-dbReadOnlyReplica, err := sql.Open("postgres", readOnlyReplica)
-if err != nil {
-    log.Print("go error when connecting to the DB")
-}
-// configure the DBs for other setup eg, tracing, etc
-// eg, tracing.Postgres(dbReadOnlyReplica)
-
-connectionDB := dbresolver.New(
-dbresolver.WithPrimaryDBs(dbPrimary),
-dbresolver.WithReplicaDBs(dbReadOnlyReplica),
-dbresolver.WithLoadBalancer(dbresolver.RoundRobinLB))
-
-defer connectionDB.Close()
-// now you can use the connection for all DB operation
-_, err = connectionDB.ExecContext(context.Background(), "DELETE FROM book WHERE id=$1") // will use primaryDB
-if err != nil {
-  log.Print("go error when executing the query to the DB", err)
-}
-connectionDB.QueryRowContext(context.Background(), "SELECT * FROM book WHERE id=$1")
-
 ```
 
 </details>
