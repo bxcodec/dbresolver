@@ -199,7 +199,11 @@ BEGIN_TEST_CASE:
 
 		mock.ExpectExec(query)
 
-		stmt.ExecContext(ctx)
+		_, err = stmt.ExecContext(ctx)
+
+		if err != nil {
+			t.Log("error in exec", err)
+		}
 	})
 
 	/*	t.Run("ping", func(t *testing.T) {
