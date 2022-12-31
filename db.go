@@ -146,7 +146,7 @@ func (db *sqlDB) Prepare(query string) (*sql.Stmt, error) {
 
 var once sync.Once
 
-func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.Stmt, err error) {
+func (db *sqlDB) PrepareContext(ctx context.Context, query string) (fauStmt *sql.Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 
@@ -172,7 +172,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (stmt1 *sql.S
 		replicaStmts: roStmts,
 	}
 
-	stmt1 = (*sql.Stmt)(unsafe.Pointer(_stmt))
+	fauStmt = (*sql.Stmt)(unsafe.Pointer(_stmt))
 
 	/* Patch sql instance method
 	Distinguishing *sql.Stmt or *stmt.
