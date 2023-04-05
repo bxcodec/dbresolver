@@ -55,6 +55,7 @@ type sqlDB struct {
 	replicas         []*sql.DB
 	loadBalancer     DBLoadBalancer
 	stmtLoadBalancer StmtLoadBalancer
+	healthReplicas   []*sql.DB
 }
 
 // PrimaryDBs return all the active primary DB
@@ -195,7 +196,15 @@ func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
 // Errors are deferred until Row's Scan method is called.
 // QueryRowContext uses a radonly db as the physical db.
 func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return db.ReadOnly().QueryRowContext(ctx, query, args...)
+	row := db.ReadOnly().QueryRowContext(ctx, query, args...)
+	if row.Err() != nil {
+		// TODO (bxcodec): handle fallback for connection error
+	}
+	return row
+}
+
+func (db *sqlDB) checkDBHealthByError(err error) {
+	
 }
 
 // SetMaxIdleConns sets the maximum number of connections in the idle
