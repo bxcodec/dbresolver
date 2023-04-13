@@ -50,6 +50,7 @@ type StmtLoadBalancer LoadBalancer[*sql.Stmt]
 // sqlDB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) db.
 // Reads and writes are automatically directed to the correct db connection
+
 type sqlDB struct {
 	primaries        []*sql.DB
 	replicas         []*sql.DB
@@ -179,7 +180,11 @@ func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 // The args are for any placeholder parameters in the query.
 // QueryContext uses a radonly db as the physical db.
 func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return db.ReadOnly().QueryContext(ctx, query, args...)
+	rows, err := db.ReadOnly().QueryContext(ctx, query, args...)
+	if isDBConnectionError(err) {
+		rows, err = db.ReadWrite().QueryContext(ctx, query, args...)
+	}
+	return rows, err
 }
 
 // QueryRow executes a query that is expected to return at most one row.
@@ -195,7 +200,12 @@ func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
 // Errors are deferred until Row's Scan method is called.
 // QueryRowContext uses a radonly db as the physical db.
 func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return db.ReadOnly().QueryRowContext(ctx, query, args...)
+	row := db.ReadOnly().QueryRowContext(ctx, query, args...)
+	if isDBConnectionError(row.Err()) {
+		row = db.ReadWrite().QueryRowContext(ctx, query, args...)
+	}
+
+	return row
 }
 
 // SetMaxIdleConns sets the maximum number of connections in the idle

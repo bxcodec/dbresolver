@@ -1,7 +1,9 @@
 package dbresolver
 
 import (
+	"errors"
 	"fmt"
+	"net"
 	"runtime"
 	"testing"
 )
@@ -27,5 +29,25 @@ func TestParallelFunction(t *testing.T) {
 		if wanted != seq[i] {
 			t.Errorf("Wrong value at position %d. Want: %d, Got: %d", i, wanted, seq[i])
 		}
+	}
+}
+
+func TestIsDBConnectionError(t *testing.T) {
+	// test connection timeout error
+	timeoutError := &net.OpError{Op: "dial", Net: "tcp", Err: &net.DNSError{IsTimeout: true}}
+	if !isDBConnectionError(timeoutError) {
+		t.Error("Expected true for timeout error")
+	}
+
+	// test general network error
+	networkError := &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("network error")}
+	if !isDBConnectionError(networkError) {
+		t.Error("Expected true for network error")
+	}
+
+	// test non-network error
+	otherError := errors.New("other error")
+	if isDBConnectionError(otherError) {
+		t.Error("Expected false for non-network error")
 	}
 }
