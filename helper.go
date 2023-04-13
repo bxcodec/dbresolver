@@ -1,6 +1,7 @@
 package dbresolver
 
 import (
+	"net"
 	"sync"
 
 	"go.uber.org/multierr"
@@ -30,4 +31,15 @@ func doParallely(n int, fn func(i int) error) error {
 	}
 
 	return multierr.Combine(arrErrs...)
+}
+
+func isDBConnectionError(err error) bool {
+	if _, ok := err.(net.Error); ok {
+		return ok
+	}
+
+	if _, ok := err.(*net.OpError); ok {
+		return ok
+	}
+	return false
 }

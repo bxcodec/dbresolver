@@ -43,7 +43,7 @@ func (s *stmt) Close() error {
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
 func (s *stmt) Exec(args ...interface{}) (sql.Result, error) {
-	return s.RWStmt().Exec(args...)
+	return s.ExecContext(context.Background(), args...)
 }
 
 // ExecContext executes a prepared statement with the given arguments
@@ -57,14 +57,18 @@ func (s *stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
 func (s *stmt) Query(args ...interface{}) (*sql.Rows, error) {
-	return s.ROStmt().Query(args...)
+	return s.QueryContext(context.Background(), args...)
 }
 
 // QueryContext executes a prepared query statement with the given
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
 func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-	return s.ROStmt().QueryContext(ctx, args...)
+	rows, err := s.ROStmt().QueryContext(ctx, args...)
+	if isDBConnectionError(err) {
+		rows, err = s.RWStmt().QueryContext(ctx, args...)
+	}
+	return rows, err
 }
 
 // QueryRow executes a prepared query statement with the given arguments.
@@ -74,7 +78,7 @@ func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRow uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
-	return s.ROStmt().QueryRow(args...)
+	return s.QueryRowContext(context.Background(), args...)
 }
 
 // QueryRowContext executes a prepared query statement with the given arguments.
@@ -84,7 +88,11 @@ func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRowContext uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	return s.ROStmt().QueryRowContext(ctx, args...)
+	row := s.ROStmt().QueryRowContext(ctx, args...)
+	if isDBConnectionError(row.Err()) {
+		row = s.RWStmt().QueryRowContext(ctx, args...)
+	}
+	return row
 }
 
 // ROStmt return the replica statement
