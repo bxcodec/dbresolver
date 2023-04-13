@@ -43,7 +43,7 @@ func (s *stmt) Close() error {
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
 func (s *stmt) Exec(args ...interface{}) (sql.Result, error) {
-	return s.RWStmt().Exec(args...)
+	return s.ExecContext(context.Background(), args...)
 }
 
 // ExecContext executes a prepared statement with the given arguments
@@ -57,7 +57,7 @@ func (s *stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
 func (s *stmt) Query(args ...interface{}) (*sql.Rows, error) {
-	return s.ROStmt().QueryContext(context.Background(), args...)
+	return s.QueryContext(context.Background(), args...)
 }
 
 // QueryContext executes a prepared query statement with the given
@@ -78,7 +78,7 @@ func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRow uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
-	return s.ROStmt().QueryRowContext(context.Background(), args...)
+	return s.QueryRowContext(context.Background(), args...)
 }
 
 // QueryRowContext executes a prepared query statement with the given arguments.

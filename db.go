@@ -144,18 +144,23 @@ func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
-
 	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
 		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
 		return
 	})
+
 	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
 		roStmts[i], err = db.replicas[i].PrepareContext(ctx, query)
+		// if connection error happens on RO connection,
+		// ignore and fallback to RW connection
+		if isDBConnectionError(err) {
+			roStmts[i] = primaryStmts[0]
+			return nil
+		}
 		return err
 	})
 
 	err = multierr.Combine(errPrimaries, errReplicas)
-
 	if err != nil {
 		return
 	}

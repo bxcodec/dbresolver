@@ -65,3 +65,8 @@ migrate-drop: $(MIGRATE) ## Drop everything inside the database.
 migrate-create: $(MIGRATE) ## Create a set of up/down migrations with a specified name.
 	@ read -p "Please provide name for the migration: " Name; \
 	migrate create -ext sql -dir internal/postgres/migrations $${Name}
+
+up:
+	@ docker-compose up -d
+down:
+	@ docker-compose up -d
