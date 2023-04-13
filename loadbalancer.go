@@ -78,35 +78,3 @@ func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	counter := lb.counter
 	return int(atomic.AddUint64(&counter, 1) % uint64(n))
 }
-
-
-// RoundRobinLoadBalancer represent for RoundRobin LB policy
-type RoundRobinLoadBalancerWithFallback[T DBConnection] struct {
-	counter uint64 // Monotonically incrementing counter on every call
-}
-
-// RandomLoadBalancer return the LB policy name
-func (lb RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
-	return RoundRobinLB
-}
-
-// Resolve return the resolved option for RoundRobin LB
-func (lb *RoundRobinLoadBalancer[T]) Resolve(dbs []T) T {
-	idx := lb.roundRobin(len(dbs))
-	return dbs[idx]
-}
-
-func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
-	if n <= 1 {
-		return 0
-	}
-	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
-}
-
-func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
-	if n <= 1 {
-		return 0
-	}
-	counter := lb.counter
-	return int(atomic.AddUint64(&counter, 1) % uint64(n))
-}

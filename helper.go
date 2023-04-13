@@ -1,6 +1,8 @@
 package dbresolver
 
 import (
+	"log"
+	"net"
 	"sync"
 
 	"go.uber.org/multierr"
@@ -30,4 +32,16 @@ func doParallely(n int, fn func(i int) error) error {
 	}
 
 	return multierr.Combine(arrErrs...)
+}
+
+func isDBConnectionError(err error) bool {
+	netErr, ok := err.(net.Error)
+	if ok {
+		if netErr.Timeout() {
+			log.Println("connection timed out error")
+		} else {
+			log.Println("general network error")
+		}
+	}
+	return ok
 }
