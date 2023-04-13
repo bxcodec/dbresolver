@@ -1,7 +1,6 @@
 package dbresolver
 
 import (
-	"log"
 	"net"
 	"sync"
 
@@ -35,15 +34,12 @@ func doParallely(n int, fn func(i int) error) error {
 }
 
 func isDBConnectionError(err error) bool {
-	netErr, ok := err.(net.Error)
-	if ok {
-		if netErr.Timeout() {
-			log.Println("connection timed out error")
-		} else {
-			log.Println("general network error")
-		}
+	if _, ok := err.(net.Error); ok {
 		return ok
 	}
-	_, ok = err.(*net.OpError)
-	return ok
+
+	if _, ok := err.(*net.OpError); ok {
+		return ok
+	}
+	return false
 }
