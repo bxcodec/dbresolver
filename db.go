@@ -171,7 +171,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
 	}
-	return
+	return _stmt, nil
 }
 
 // Query executes a query that returns rows, typically a SELECT.
