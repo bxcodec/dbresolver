@@ -18,10 +18,12 @@ import (
 
 func initDBResolver() dbresolver.DB {
 	var (
+		// for RW
 		rwHost     = "localhost"
 		rwPort     = 5432
 		rwUser     = "postgres"
 		rwPassword = "my_password"
+		// for RO
 		roHost     = "localhost"
 		roPort     = 5433
 		roUser     = "postgres"
@@ -78,15 +80,16 @@ func main() {
 		fmt.Println("Queried Articles Without Prepare ", res)
 
 		id := c.QueryParam("id")
-		singleArticle := queryRow(connectionDB, id)
-		fmt.Println("Queried Single Article: ", singleArticle)
+		if id != "" {
+			singleArticle := queryRow(connectionDB, id)
+			fmt.Println("Queried Single Article: ", singleArticle)
 
-		singleArticlePrepared := queryRowPrepare(connectionDB, id)
-		fmt.Println("Queried Single Article: ", singleArticlePrepared)
+			singleArticlePrepared := queryRowPrepare(connectionDB, id)
+			fmt.Println("Queried Single Article: ", singleArticlePrepared)
 
-		singleArticlePreparedStmt := queryRowPreparedStmt(stmt, id)
-		fmt.Println("Queried Single Article with Prepared Stmt: ", singleArticlePreparedStmt)
-
+			singleArticlePreparedStmt := queryRowPreparedStmt(stmt, id)
+			fmt.Println("Queried Single Article with Prepared Stmt: ", singleArticlePreparedStmt)
+		}
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 	e.Logger.Fatal(e.Start(":1323"))
