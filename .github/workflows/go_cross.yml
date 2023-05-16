@@ -28,6 +28,7 @@ jobs:
 
   build:
     runs-on: ${{ matrix.os }}
+    timeout: 3m
 
     steps:
       - uses: actions/checkout@v3
