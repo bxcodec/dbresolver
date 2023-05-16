@@ -1,19 +1,9 @@
 # Exporting bin folder to the path for makefile
 export PATH   := $(PWD)/bin:$(PATH)
-
 # Default Shell
-ifeq ($(OS),Windows_NT)
-    export SHELL := cmd.exe
-else
-    export SHELL := bash
-endif
-
-# Type of OS: Linux, Darwin, or Windows.
-ifeq ($(OS),Windows_NT)
-    export OSTYPE := Windows
-else
-    export OSTYPE := $(shell uname -s)
-endif
+export SHELL  := bash
+# Type of OS: Linux or Darwin or Windows.
+export OSTYPE := $(shell uname -s)
 
 ifeq ($(OSTYPE),Darwin)
     export MallocNanoZone=0
@@ -21,6 +11,17 @@ endif
 
 include ./misc/makefile/tools.Makefile
 
+# Installation of gotestsum
+$(GOTESTSUM):
+ifeq ($(OSTYPE), Windows_NT)
+	@powershell -Command "iwr https://github.com/gotestyourself/gotestsum/releases/download/v$(GOTESTSUM_VERSION)/gotestsum_$(GOTESTSUM_VERSION)_windows_amd64.tar.gz -OutFile gotestsum.tar.gz"
+	@powershell -Command "Expand-Archive -Path gotestsum.tar.gz -DestinationPath bin"
+	@powershell -Command "Remove-Item gotestsum.tar.gz"
+else
+	@curl -L https://github.com/gotestyourself/gotestsum/releases/download/v$(GOTESTSUM_VERSION)/gotestsum_$(GOTESTSUM_VERSION)_$(OSTYPE)_amd64.tar.gz | tar xzv -C bin
+endif
+
+# Targets
 build: test
 	@go build ./...
 
@@ -43,6 +44,7 @@ run-tests: $(GOTESTSUM)
 
 test: run-tests $(TPARSE) ## Run Tests & parse details
 	@cat gotestsum.json.out | $(TPARSE) -all -notests
+
 
 lint: $(GOLANGCI) ## Runs golangci-lint with predefined configuration
 	@echo "Applying linter"
