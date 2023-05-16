@@ -3,19 +3,29 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
-	"testing"
-
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/google/gofuzz"
+	"math/rand"
+	"testing"
+	"time"
 )
 
 type DBConfig struct {
-	primaryDBCount uint
-	replicaDBCount uint
+	primaryDBCount uint8
+	replicaDBCount uint8
+	lbPolicy       LoadBalancerPolicy
 }
 
-func testMW(t *testing.T, config DBConfig, loadBalancerPolicy LoadBalancerPolicy) {
+var LoadBalancerPolicies = []LoadBalancerPolicy{
+	RandomLB,
+	RoundRobinLB,
+}
+
+func testMW(t *testing.T, config DBConfig) {
 
 	noOfPrimaries, noOfReplicas := int(config.primaryDBCount), int(config.replicaDBCount)
+	lbPolicy := config.lbPolicy
 
 	primaries := make([]*sql.DB, noOfPrimaries)
 	replicas := make([]*sql.DB, noOfReplicas)
@@ -50,7 +60,7 @@ func testMW(t *testing.T, config DBConfig, loadBalancerPolicy LoadBalancerPolicy
 		mockReplicas[i] = mock
 	}
 
-	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(loadBalancerPolicy)).(*sqlDB)
+	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
 		for i := 0; i < noOfPrimaries*5; i++ {
@@ -235,21 +245,21 @@ BEGIN_TEST:
 	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
 
 	testCases := []DBConfig{
-		{1, 0},
-		{1, 1},
-		{1, 2},
-		{1, 10},
-		{2, 0},
-		{2, 1},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{3, 6},
-		{5, 6},
-		{7, 20},
-		{10, 10},
-		{10, 20},
+		{1, 0, ""},
+		{1, 1, ""},
+		{1, 2, ""},
+		{1, 10, ""},
+		{2, 0, ""},
+		{2, 1, ""},
+		{3, 0, ""},
+		{3, 1, ""},
+		{3, 2, ""},
+		{3, 3, ""},
+		{3, 6, ""},
+		{5, 6, ""},
+		{7, 20, ""},
+		{10, 10, ""},
+		{10, 20, ""},
 	}
 
 	retrieveTestCase := func() DBConfig {
@@ -268,9 +278,66 @@ BEGIN_TEST_CASE:
 
 	dbConfig := retrieveTestCase()
 
-	testMW(t, dbConfig, loadBalancerPolicy)
+	dbConfig.lbPolicy = loadBalancerPolicy
+
+	testMW(t, dbConfig)
 
 	goto BEGIN_TEST_CASE
+}
+
+func FuzzMultiWrite(f *testing.F) {
+
+	func() { //generate corpus
+
+		seed := time.Now().UnixNano()
+		rand.Seed(seed)
+
+		f.Logf("[seed] %v", seed) //recreate the testcase using this seed
+
+		for i := 0; i < 10; i++ { //Corpus of <i>
+			fuzzer := fuzz.New()
+			var rdbCount, wdbCount uint8
+			fuzzer.Fuzz(&rdbCount)
+			fuzzer.Fuzz(&wdbCount)
+
+			lbPolicyID := rand.Uint32()
+
+			//f.Add(uint(1), uint(2), uint8(lbPolicyID))
+			f.Add(wdbCount, rdbCount, uint8(lbPolicyID))
+
+			if !testing.Short() {
+				break //short circuiting with 1 testcase
+			}
+		}
+	}()
+
+	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
+
+		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
+
+		t.Log("Policy", LoadBalancerPolicies[policyID])
+
+		config := DBConfig{
+			wdbCount, rdbCount, LoadBalancerPolicies[policyID],
+		}
+
+		if config.primaryDBCount == 0 {
+			t.Skipf("skipping due to mising primary db")
+		}
+
+		t.Log("dbConf", config)
+
+		t.Run(fmt.Sprintf("%v", config), func(t *testing.T) {
+
+			dbConf := config
+
+			t.Parallel()
+
+			testMW(t, dbConf)
+		})
+
+	})
+
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
