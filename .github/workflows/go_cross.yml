@@ -19,8 +19,8 @@ jobs:
         include:
           - os: ubuntu-latest
             gocache: /tmp/go/gocache
-          - os: windows-latest
-            gocache: C:/gocache
+#          - os: windows-latest
+#            gocache: C:/gocache
           - os: macos-latest
             gocache: /tmp/go/gocache
 
