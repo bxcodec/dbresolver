@@ -144,5 +144,5 @@ issues:
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 run:
   timeout: 5m
-  go: "1.19"
+  go: "1.18"
   skip-dirs: [examples]
