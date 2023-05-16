@@ -5,18 +5,12 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-
   workflow_dispatch:
 
 jobs:
 
   build:
-    timeout: 3m
-
-
     strategy:
-      max-parallel: 2
-      fail-fast: true
       matrix:
         go-version: [ '1.18.x', '1.19.x', '1.20.x' ]
         arch: [ x64, arm, arm64 ]
@@ -30,17 +24,22 @@ jobs:
           - os: macos-latest
             gocache: /tmp/go/gocache
 
+      fail-fast: true
+      max-parallel: 2
+
     runs-on: ${{ matrix.os }}
 
+    timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
-          cache: true
+          cache: 'go'
+          go-cache: ${{ matrix.gocache }}
           go-version-file: go.mod
           check-latest: true
 
@@ -52,7 +51,6 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.arch }}-go-${{ hashFiles('**/go.mod','*_test.go') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.arch }}-go-${{ hashFiles('**/go.mod','*.go') }}
-            
 
       - name: Linter
         run: make lint-prepare && make lint
