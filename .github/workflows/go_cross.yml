@@ -9,12 +9,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  cross_platform:
+
+  build:
+
     strategy:
       max-parallel: 2
       fail-fast: true
       matrix:
-        go-version: ['1.18.x', '1.19.x', '1.20.x' ]
+        go-version: [ '1.18.x', '1.19.x', '1.20.x' ]
         arch: [ x64, arm, arm64 ]
         os: [ macos-latest, ubuntu-latest ] #TODO: support for windows-latest in MakeFile
 
@@ -26,7 +28,6 @@ jobs:
           - os: macos-latest
             gocache: /tmp/go/gocache
 
-  build:
     runs-on: ${{ matrix.os }}
     timeout: 3m
 
