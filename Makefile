@@ -1,20 +1,20 @@
 # Exporting bin folder to the path for makefile
 export PATH   := $(PWD)/bin:$(PATH)
 # Default Shell
-export SHELL  := bash
-# Type of OS: Linux or Darwin.
-export OSTYPE := $(shell uname -s)
-
-ifeq ($(OSTYPE),Darwin)
-    export MallocNanoZone=0
+export SHELL  := powershell.exe
+# Type of OS: Linux or Darwin or Windows.
+ifeq ($(OS),Windows_NT)
+	export OSTYPE := Windows
+else
+	export OSTYPE := $(shell uname -s)
 endif
 
 include ./misc/makefile/tools.Makefile
 
 build: test
-	@go build ./...
+	go build ./...
 
-install-deps: gotestsum tparse ## Install Development Dependencies (localy).
+install-deps: gotestsum.exe tparse.exe ## Install Development Dependencies (locally).
 deps: $(GOTESTSUM) $(TPARSE) ## Checks for Global Development Dependencies.
 deps:
 	@echo "Required Tools Are Available"
@@ -29,15 +29,14 @@ TESTS_ARGS += -test.coverprofile   coverage.out
 TESTS_ARGS += -test.timeout        60s
 TESTS_ARGS += -race
 run-tests: $(GOTESTSUM)
-	@ gotestsum $(TESTS_ARGS) -short
+	& gotestsum $(TESTS_ARGS) -short
 
 test: run-tests $(TPARSE) ## Run Tests & parse details
-	@cat gotestsum.json.out | $(TPARSE) -all -notests
-
+	(cat gotestsum.json.out | ./tparse.exe -all -notests) || exit 0
 
 lint: $(GOLANGCI) ## Runs golangci-lint with predefined configuration
 	@echo "Applying linter"
 	golangci-lint version
 	golangci-lint run -c .golangci.yaml ./...
 
-.PHONY: lint lint-prepare clean build unittest 
+.PHONY: lint lint-prepare clean build unittest
