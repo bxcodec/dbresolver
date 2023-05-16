@@ -17,3 +17,5 @@ bin/
 coverage.txt
 oryxBuildBinary
 .idea
+
+cover.txt
