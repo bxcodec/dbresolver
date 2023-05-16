@@ -2,7 +2,7 @@
 export PATH   := $(PWD)/bin:$(PATH)
 # Default Shell
 export SHELL  := bash
-# Type of OS: Linux or Darwin or Windows.
+# Type of OS: Linux or Darwin.
 export OSTYPE := $(shell uname -s)
 
 ifeq ($(OSTYPE),Darwin)
@@ -11,17 +11,6 @@ endif
 
 include ./misc/makefile/tools.Makefile
 
-# Installation of gotestsum
-$(GOTESTSUM):
-ifeq ($(OSTYPE), Windows_NT)
-	@powershell -Command "iwr https://github.com/gotestyourself/gotestsum/releases/download/v$(GOTESTSUM_VERSION)/gotestsum_$(GOTESTSUM_VERSION)_windows_amd64.tar.gz -OutFile gotestsum.tar.gz"
-	@powershell -Command "Expand-Archive -Path gotestsum.tar.gz -DestinationPath bin"
-	@powershell -Command "Remove-Item gotestsum.tar.gz"
-else
-	@curl -L https://github.com/gotestyourself/gotestsum/releases/download/v$(GOTESTSUM_VERSION)/gotestsum_$(GOTESTSUM_VERSION)_$(OSTYPE)_amd64.tar.gz | tar xzv -C bin
-endif
-
-# Targets
 build: test
 	@go build ./...
 
