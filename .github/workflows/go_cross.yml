@@ -11,6 +11,8 @@ on:
 jobs:
 
   build:
+    timeout: 3m
+
 
     strategy:
       max-parallel: 2
@@ -29,7 +31,7 @@ jobs:
             gocache: /tmp/go/gocache
 
     runs-on: ${{ matrix.os }}
-    timeout: 3m
+
 
     steps:
       - uses: actions/checkout@v3
