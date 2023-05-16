@@ -1,6 +1,6 @@
 module github.com/bxcodec/dbresolver/v2
 
-go 1.19
+go 1.18
 
 require (
 	github.com/lib/pq v1.10.7

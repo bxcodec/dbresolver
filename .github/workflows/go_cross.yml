@@ -1,0 +1,57 @@
+name: Go Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  cross_platform:
+    strategy:
+      max-parallel: 2
+      fail-fast: true
+      matrix:
+        go-version: ['1.18.x', '1.19.x', '1.20.x' ]
+        arch: [ x64, arm, arm64 ]
+        os: [ macos-latest, ubuntu-latest ] #TODO: support for windows-latest in MakeFile
+
+        include:
+          - os: ubuntu-latest
+            gocache: /tmp/go/gocache
+          - os: windows-latest
+            gocache: C:/gocache
+          - os: macos-latest
+            gocache: /tmp/go/gocache
+
+  build:
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Cache Go tests
+        uses: actions/cache@v2
+        with:
+          path: |
+            $(go env GOCACHE)
+          key: ${{ runner.os }}-${{ matrix.arch }}-go-${{ hashFiles('**/go.mod','*_test.go') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-go-${{ hashFiles('**/go.mod','*.go') }}
+            
+
+      - name: Linter
+        run: make lint-prepare && make lint
+
+      - name: Test
+        run: make test
