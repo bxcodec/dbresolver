@@ -8,56 +8,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
-func TestMultiWrite(t *testing.T) {
-	loadBalancerPolices := []LoadBalancerPolicy{
-		RoundRobinLB,
-		RandomLB,
-	}
+type DBConfig struct {
+	primaryDBCount uint
+	replicaDBCount uint
+}
 
-	retrieveLoadBalancer := func() (loadBalancerPolicy LoadBalancerPolicy) {
-		loadBalancerPolicy = loadBalancerPolices[0]
-		loadBalancerPolices = loadBalancerPolices[1:]
-		return
-	}
+func testMW(t *testing.T, config DBConfig, loadBalancerPolicy LoadBalancerPolicy) {
 
-BEGIN_TEST:
-	loadBalancerPolicy := retrieveLoadBalancer()
-
-	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
-
-	testCases := [][2]uint{
-		{1, 0},
-		{1, 1},
-		{1, 2},
-		{1, 10},
-		{2, 0},
-		{2, 1},
-		{3, 0},
-		{3, 1},
-		{3, 2},
-		{3, 3},
-		{3, 6},
-		{5, 6},
-		{7, 20},
-		{10, 10},
-		{10, 20},
-	}
-
-	retrieveTestCase := func() (int, int) {
-		testCase := testCases[0]
-		testCases = testCases[1:]
-		return int(testCase[0]), int(testCase[1])
-	}
-
-BEGIN_TEST_CASE:
-	if len(testCases) == 0 {
-		if len(loadBalancerPolices) == 0 {
-			return
-		}
-		goto BEGIN_TEST
-	}
-
-	noOfPrimaries, noOfReplicas := retrieveTestCase()
+	noOfPrimaries, noOfReplicas := int(config.primaryDBCount), int(config.replicaDBCount)
 
 	primaries := make([]*sql.DB, noOfPrimaries)
 	replicas := make([]*sql.DB, noOfReplicas)
@@ -254,6 +212,63 @@ BEGIN_TEST_CASE:
 
 		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
 	})
+
+}
+
+func TestMultiWrite(t *testing.T) {
+	loadBalancerPolices := []LoadBalancerPolicy{
+		RoundRobinLB,
+		RandomLB,
+	}
+
+	t.Parallel()
+
+	retrieveLoadBalancer := func() (loadBalancerPolicy LoadBalancerPolicy) {
+		loadBalancerPolicy = loadBalancerPolices[0]
+		loadBalancerPolices = loadBalancerPolices[1:]
+		return
+	}
+
+BEGIN_TEST:
+	loadBalancerPolicy := retrieveLoadBalancer()
+
+	t.Logf("LoadBalancer-%s", loadBalancerPolicy)
+
+	testCases := []DBConfig{
+		{1, 0},
+		{1, 1},
+		{1, 2},
+		{1, 10},
+		{2, 0},
+		{2, 1},
+		{3, 0},
+		{3, 1},
+		{3, 2},
+		{3, 3},
+		{3, 6},
+		{5, 6},
+		{7, 20},
+		{10, 10},
+		{10, 20},
+	}
+
+	retrieveTestCase := func() DBConfig {
+		testCase := testCases[0]
+		testCases = testCases[1:]
+		return testCase
+	}
+
+BEGIN_TEST_CASE:
+	if len(testCases) == 0 {
+		if len(loadBalancerPolices) == 0 {
+			return
+		}
+		goto BEGIN_TEST
+	}
+
+	dbConfig := retrieveTestCase()
+
+	testMW(t, dbConfig, loadBalancerPolicy)
 
 	goto BEGIN_TEST_CASE
 }
