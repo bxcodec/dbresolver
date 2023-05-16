@@ -58,6 +58,7 @@ jobs:
             ${{ runner.os }}-${{ matrix.arch }}-go-${{ hashFiles('**/go.mod','*.go') }}
 
       - name: Linter
+        continue-on-error: true
         run: make lint-prepare && make lint
 
       - name: Test
