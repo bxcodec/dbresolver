@@ -59,8 +59,11 @@ jobs:
           go install gotest.tools/gotestsum@latest
           tparse -h
 
-      - name: Install tparse
-        uses: mfridman/tparse-action@v1
+      - name: Upload Binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: go-test-utils
+          path: ${{ env.GOBIN }}
 
 
   fuzz-multiwrite:
@@ -73,6 +76,12 @@ jobs:
       #      - name: Setup upterm session
       #        uses: lhotari/action-upterm@v1
       #        timeout-minutes: 600
+
+      - name: Download GO BIN
+        uses: actions/download-artifact@v2
+        with:
+          name: go-test-utils
+          path: ${{ env.GOBIN }}
 
       - name: Fuzz MultiWrite Short
         run: |
