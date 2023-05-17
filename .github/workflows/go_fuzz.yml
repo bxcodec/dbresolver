@@ -59,10 +59,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz MultiWrite Short
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=10s -timeout=15m -cover -short
+        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -short
 
       - name: Fuzz MultiWrite
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=10s -timeout=15m -cover
+        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover
 
   fuzz:
     needs: [ build ] #will fail if more than 1 fuzz function is ..
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz Short
-        run: go test -fuzz=Fuzz -short -v -fuzztime=10s -timeout=15m -cover  -run="Fuzz*"
+        run: go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
 
 
   race-fuzz:
@@ -83,7 +83,7 @@ jobs:
 
       - name: Race Short Fuzz
         continue-on-error: true
-        run: go test -fuzz=Fuzz -short -race -v -fuzztime=1m -timeout=15m -cover  -run="Fuzz*"
+        run: go test -fuzz=Fuzz -short -race -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
 
       - name: Fuzz normalize
         if: ${{ failure() }}
