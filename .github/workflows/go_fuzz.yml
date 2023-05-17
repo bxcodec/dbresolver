@@ -83,17 +83,17 @@ jobs:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
+      - run: chmod +x bin/*
+
       - name: Fuzz MultiWrite Short
         run: |
-          chmod +x bin/*
           go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
-          chmod +x bin/*
           go test -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
-          tparse -follow -all -sort=elapsed
+          bin/tparse -follow -all -sort=elapsed
 
 
   fuzz:
@@ -103,11 +103,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Download GO BIN
+        uses: actions/download-artifact@v2
+        with:
+          name: go-test-utils
+          path: ${{ env.GOBIN }}
+
+      - run: chmod +x bin/*
       - name: Fuzz Short
         run: |
           #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
           go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
-          tparse -follow -all -sort=elapsed
+          bin/tparse -follow -all -sort=elapsed
 
 
 
