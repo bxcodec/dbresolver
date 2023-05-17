@@ -129,11 +129,9 @@ linters:
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
-    -
     - path: _test\.go
       linters:
         - gomnd
-        -
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
 
