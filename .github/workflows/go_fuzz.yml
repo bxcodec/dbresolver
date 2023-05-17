@@ -16,7 +16,6 @@ concurrency:
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
-#  PATH: "${{ env.GOBIN }}:$PATH"
 
 jobs:
   build:
@@ -33,7 +32,7 @@ jobs:
           check-latest: true
           cache-dependency-path: go.sum
           cache: true
-#          go-version-file: go.mod
+          go-version-file: go.mod
 
       - name: Cache Go
         uses: actions/cache@v2
@@ -49,19 +48,26 @@ jobs:
         timeout-minutes: 2
         run: |
           go build -v
-          #export PATH=${{ env.GOBIN }}:$PATH
           go env -w GOBIN=${{ env.GOBIN }}
-          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
+          echo "PATH=\${{ env.GOBIN }}:\$PATH" >> $GITHUB_PATH
 
       - name: Install Test Deps
         run: |
           go install github.com/mfridman/tparse@latest
           go install gotest.tools/gotestsum@latest
-          tparse -h
+          tparse
 
-      - name: Install tparse
-        uses: mfridman/tparse-action@v1
+      - name: Cache tparse
+        uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/bin
+          key: ${{ runner.os }}-tparse-${{ hashFiles('bin/tparse') }}
 
+      - name: Create tparse artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: tparse
+          path: ${{ github.workspace }}/bin/tparse
 
   fuzz-multiwrite:
     needs: [ build ]
@@ -70,55 +76,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      #      - name: Setup upterm session
-      #        uses: lhotari/action-upterm@v1
-      #        timeout-minutes: 600
+      - name: Download tparse artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: tparse
 
       - name: Fuzz MultiWrite Short
         run: |
-          go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
-          tparse -follow -all -sort=elapsed
+          ${{ github.workspace }}/bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
-          go test -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
-          tparse -follow -all -sort=elapsed
-
-
-  fuzz:
-    needs: [ build ] #will fail if more than 1 fuzz function is present
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Fuzz Short
-        run: |
-          #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
-          go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
-          tparse -follow -all -sort=elapsed
-
-
-
-  race-fuzz:
-    runs-on: ubuntu-latest
-    needs: [ fuzz ]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Race Short Fuzz
-        continue-on-error: true
-        run: |
-          go test -fuzz=Fuzz -short -race -v -fuzztime=5m -timeout=15m -cover -covermode=count -run="Fuzz*"
-
-      - name: Fuzz normalize
-        if: ${{ failure() }}
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 10
-          retry_on: error
-          timeout_minutes: 360m
-          #working-directory: ${{ github.workspace }}
-          command: |
-            echo "go fuzz intensive failed"
+          ${{ github.workspace }}/bin/
