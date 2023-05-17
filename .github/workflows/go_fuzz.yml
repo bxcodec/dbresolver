@@ -66,6 +66,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        timeout-minutes: 600
+
       - name: Fuzz MultiWrite Short
         run: |
           go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
