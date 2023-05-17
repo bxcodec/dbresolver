@@ -42,7 +42,7 @@ jobs:
             ${{ env.GOBIN }}
           key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
           restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
+            ${{ runner.os }}-go-${{ hashFiles('*.go') }}
 
       - name: Build
         timeout-minutes: 2
