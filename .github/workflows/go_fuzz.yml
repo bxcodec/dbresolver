@@ -55,9 +55,10 @@ jobs:
       - name: Build
         timeout-minutes: 2
         run: |
-          go build -v
-          export PATH=$HOME/go/bin:$PATH
-          go env -w GOBIN=${{ env.GOBIN}}
+               go build -v
+               export PATH=${{ env.GOBIN}}:$PATH
+          #          echo "PATH=\$HOME/go/bin:\$PATH" >> $GITHUB_ENV
+               go env -w GOBIN=${{ env.GOBIN}}
 
 
       - name: Install Test Deps
