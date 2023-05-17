@@ -62,13 +62,13 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz MultiWrite Short
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -short
+        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -short -run="^$"
 
       - name: Fuzz MultiWrite
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover
+        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -run="^$"
 
   fuzz:
-    needs: [ build ] #will fail if more than 1 fuzz function is ..
+    needs: [ build ] #will fail if more than 1 fuzz function is present
     runs-on: ubuntu-latest
 
     steps:
