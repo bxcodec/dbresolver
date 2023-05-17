@@ -85,11 +85,13 @@ jobs:
 
       - name: Fuzz MultiWrite Short
         run: |
+          chmod +x bin/*
           go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
+          chmod +x bin/*
           go test -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
           tparse -follow -all -sort=elapsed
 
