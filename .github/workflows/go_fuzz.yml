@@ -33,7 +33,7 @@ jobs:
           check-latest: true
           cache-dependency-path: go.sum
           cache: true
-          go-version-file: go.mod
+#          go-version-file: go.mod
 
       - name: Cache Go
         uses: actions/cache@v2
@@ -51,7 +51,7 @@ jobs:
           go build -v
           #export PATH=${{ env.GOBIN }}:$PATH
           go env -w GOBIN=${{ env.GOBIN }}
-          echo "PATH=\${{ env.GOBIN }}:\$PATH" >> $GITHUB_PATH
+          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
 
       - name: Install Test Deps
         run: |
