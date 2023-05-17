@@ -19,3 +19,7 @@ oryxBuildBinary
 .idea
 
 cover.txt
+
+
+# Created by go-fuzz
+testdata/
