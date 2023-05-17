@@ -23,9 +23,9 @@ concurrency:
 
 jobs:
   build:
-    timeout-minutes: 3m
-
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+
     env:
       GOCACHE: /tmp/go/gocache
 
@@ -38,8 +38,8 @@ jobs:
           path: |
             $(go env GOCACHE)
           key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -51,6 +51,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Build
+        timeout-minutes: 2
         run: go build -v
 
   fuzz-multiwrite:
