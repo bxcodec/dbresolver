@@ -86,7 +86,7 @@ jobs:
       - name: Fuzz MultiWrite Short
         run: |
           go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
-          tparse -follow -all -sort=elapsed
+          bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
