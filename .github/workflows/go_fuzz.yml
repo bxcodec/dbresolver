@@ -23,34 +23,35 @@ concurrency:
 
 jobs:
   build:
+    timeout-minutes: 3m
+
     runs-on: ubuntu-latest
     env:
       GOCACHE: /tmp/go/gocache
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Cache Go tests
-      uses: actions/cache@v2
-      with:
-        path: |
-          $(go env GOCACHE)
-        key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
+      - name: Cache Go tests
+        uses: actions/cache@v2
+        with:
+          path: |
+            $(go env GOCACHE)
+          key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
         restore-keys: |
           ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.20.3
-        check-latest: true
-        cache-dependency-path: go.sum
-        cache: true
-        go-version-file: go.mod
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.20.3
+          check-latest: true
+          cache-dependency-path: go.sum
+          cache: true
+          go-version-file: go.mod
 
-    - name: Build
-      timeout-minutes: 3m
-      run: go build -v
+      - name: Build
+        run: go build -v
 
   fuzz-multiwrite:
     needs: [ build ]
