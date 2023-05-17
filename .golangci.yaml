@@ -134,6 +134,10 @@ issues:
         - gomnd
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
+
+    - path: db_test.go
+      text: "commentFormatting: put a space between `//` and comment text (gocritic)"
+
     - path: db_test.go
       linters:
         - goconst
@@ -142,6 +146,7 @@ issues:
         - errcheck
     - path: loadbalancer.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
+
 run:
   timeout: 5m
   go: "1.18"
