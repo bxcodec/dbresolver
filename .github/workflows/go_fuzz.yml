@@ -16,6 +16,7 @@ concurrency:
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
+  PATH: "\${{ env.GOBIN }}:\$PATH"
 
 jobs:
   build:
