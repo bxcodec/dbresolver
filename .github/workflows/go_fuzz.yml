@@ -28,6 +28,7 @@ jobs:
 
     env:
       GOCACHE: /tmp/go/gocache
+      GOBIN: ${{ env.GITHUB_WORKSPACE }}/bin
 
     steps:
       - uses: actions/checkout@v3
@@ -49,6 +50,8 @@ jobs:
           cache-dependency-path: go.sum
           cache: true
           go-version-file: go.mod
+          gobin: ${{ env.GOBIN }}
+
 
       - name: Build
         timeout-minutes: 2
