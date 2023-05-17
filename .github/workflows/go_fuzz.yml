@@ -21,14 +21,14 @@ concurrency:
   group: go_fuzz
   cancel-in-progress: true
 
+env:
+  GOCACHE: /tmp/go/gocache
+  GOBIN: ${{ github.workspace }}/bin
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 3
-
-    env:
-      GOCACHE: /tmp/go/gocache
-      GOBIN: ${{ github.workspace }}/bin
 
     steps:
       - uses: actions/checkout@v3
@@ -54,15 +54,16 @@ jobs:
 
       - name: Build
         timeout-minutes: 2
-        run: go build -v
+        run: |
+          go build -v
+          go env -w GOBIN=${{ env.GOBIN}}
+
 
       - name: Install Test Deps
         run: |
-          #          go env -w GOBIN=/bin
-          #          go install github.com/mfridman/tparse@latest
-          #          go install gotest.tools/gotestsum@latest
-               make install-deps
-
+          go install github.com/mfridman/tparse@latest
+          tparse
+  #          go install gotest.tools/gotestsum@latest
 
   fuzz-multiwrite:
     needs: [ build ]
