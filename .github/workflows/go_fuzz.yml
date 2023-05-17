@@ -33,15 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache Go tests
-        uses: actions/cache@v2
-        with:
-          path: |
-            $(go env GOCACHE)
-          key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -50,8 +41,20 @@ jobs:
           cache-dependency-path: go.sum
           cache: true
           go-version-file: go.mod
-          gobin: ${{ env.GOBIN }}
 
+      - name: Add GOBIN to PATH
+        run: echo "PATH=\$HOME/go/bin:\$PATH" >> $GITHUB_ENV
+        if: success()
+
+      - name: Cache Go tests
+        uses: actions/cache@v2
+        with:
+          path: |
+            $(go env GOCACHE)
+            $(go env GOBIN)
+          key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
 
       - name: Build
         timeout-minutes: 2
