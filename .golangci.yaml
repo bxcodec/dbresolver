@@ -135,11 +135,11 @@ issues:
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
 
-    - path: \.go
-      text: "commentedOutCode: may want to remove commented-out code (gocritic)"
+    - path: db_test.go
+      text: "commentedOutCode: may want to remove commented-out code"
 
     - path: db_test.go
-      text: "commentFormatting: put a space between `//` and comment text (gocritic)"
+      text: "commentFormatting: put a space between `//` and comment text"
 
     - path: db_test.go
       linters:
