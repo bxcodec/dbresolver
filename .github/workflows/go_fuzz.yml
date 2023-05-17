@@ -69,11 +69,11 @@ jobs:
       - uses: actions/checkout@v3
 
 #      - name: Race Fuzz
-#        run: go test ./... -fuzz -race -v -fuzztime=1m -timeout=15m
+#        run: go test ./... -fuzz -race -v -fuzztime=1m -timeout=15m -cover
 #        continue-on-error: true
 
       - name: Race Short Fuzz
-        run: go test ./... -short -fuzz -race -v -fuzztime=1m -timeout=15m
+        run: go test ./... -short -fuzz -race -v -fuzztime=1m -timeout=15m -cover
 
   fuzz-intensive:
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz
-        run:  go test ./... -fuzz  -v -fuzztime=10m -timeout=15m
+        run: go test ./... -fuzz  -v -fuzztime=10m -timeout=15m -cover
         continue-on-error: true
 
       - name: Fuzz normalize
