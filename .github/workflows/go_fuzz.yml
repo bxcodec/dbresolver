@@ -42,10 +42,6 @@ jobs:
           cache: true
           go-version-file: go.mod
 
-      - name: Add GOBIN to PATH
-        run: echo "PATH=\$HOME/go/bin:\$PATH" >> $GITHUB_ENV
-        if: success()
-
       - name: Cache Go
         uses: actions/cache@v2
         with:
@@ -62,10 +58,11 @@ jobs:
 
       - name: Install Test Deps
         run: |
-          go env -w GOBIN=/bin
-          go install github.com/mfridman/tparse@latest
-          go install gotest.tools/gotestsum@latest 
-  
+          #          go env -w GOBIN=/bin
+          #          go install github.com/mfridman/tparse@latest
+          #          go install gotest.tools/gotestsum@latest
+               make install-deps
+
 
   fuzz-multiwrite:
     needs: [ build ]
