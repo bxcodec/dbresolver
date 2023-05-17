@@ -62,10 +62,15 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz MultiWrite Short
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -short -run="^$"
+        run: |
+          go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
-        run: go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -run="^$"
+        run: |
+          go test -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          tparse -follow -all -sort=elapsed
+
 
   fuzz:
     needs: [ build ] #will fail if more than 1 fuzz function is present
@@ -75,7 +80,11 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Fuzz Short
-        run: go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
+        run: |
+          #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
+               go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
+               tparse -follow -all -sort=elapsed
+
 
 
   race-fuzz:
@@ -86,7 +95,8 @@ jobs:
 
       - name: Race Short Fuzz
         continue-on-error: true
-        run: go test -fuzz=Fuzz -short -race -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
+        run: |
+          go test -fuzz=Fuzz -short -race -v -fuzztime=5m -timeout=15m -cover -covermode=count -run="Fuzz*"
 
       - name: Fuzz normalize
         if: ${{ failure() }}
