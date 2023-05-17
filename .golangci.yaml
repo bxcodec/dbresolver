@@ -129,9 +129,11 @@ linters:
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
+    -
     - path: _test\.go
       linters:
         - gomnd
+        -
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
 
@@ -141,8 +143,11 @@ issues:
     - path: \.go
       text: "commentFormatting: put a space between `//` and comment text"
 
-    - path: \.go
-      text: "unnecessary leading newline (whitespace)"
+    - path: db_test.go
+      linters:
+        - whitespace
+      text: "unnecessary (leading|trailing) newline"
+
 
     - path: db_test.go
       linters:
