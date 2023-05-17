@@ -1,0 +1,106 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go Fuzz
+
+on:
+  push:
+    branches:
+      - 'main'
+
+  pull_request:
+    branches:
+      - 'main'
+
+  schedule:
+    - cron: '0 * */1 * *'
+
+  workflow_dispatch:
+
+concurrency:
+  group: go_fuzz
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GOCACHE: /tmp/go/gocache
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache Go tests
+      uses: actions/cache@v2
+      with:
+        path: |
+          $(go env GOCACHE)
+        key: ${{ runner.os }}-go-${{ hashFiles('*.go') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ hashFiles('(*.go') }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.20.1
+        check-latest: true
+        cache-dependency-path: go.sum
+        cache: true
+        go-version-file: go.mod
+
+    - name: Build
+      run: go build -v ./...
+
+  fuzz:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fuzz Short
+        run: go test -short -fuzz -v -fuzztime=10s -timeout=15m
+        #go test -run="^Fuzz" -short -v -timeout 360m -fuzztime 1m
+
+  race-fuzz:
+    runs-on: ubuntu-latest
+    needs: [ fuzz ]
+    steps:
+      - uses: actions/checkout@v3
+
+#      - name: Race Fuzz
+#        run: go test ./... -fuzz -race -v -fuzztime=1m -timeout=15m
+#        continue-on-error: true
+
+      - name: Race Short Fuzz
+        run: go test ./... -short -fuzz -race -v -fuzztime=1m -timeout=15m
+
+  fuzz-intensive:
+    runs-on: ubuntu-latest
+    needs: [ fuzz ]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fuzz
+        run:  go test ./... -fuzz  -v -fuzztime=10m -timeout=15m
+        continue-on-error: true
+
+      - name: Fuzz normalize
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          retry_on: error
+          timeout_minutes: 360m
+          #working-directory: ${{ github.workspace }}
+          command: |
+            echo "go fuzz intensive failed"
+
+
+
+
+
+
+
+
+
