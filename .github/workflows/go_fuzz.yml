@@ -46,7 +46,7 @@ jobs:
         run: echo "PATH=\$HOME/go/bin:\$PATH" >> $GITHUB_ENV
         if: success()
 
-      - name: Cache Go tests
+      - name: Cache Go
         uses: actions/cache@v2
         with:
           path: |
