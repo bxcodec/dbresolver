@@ -287,14 +287,14 @@ BEGIN_TEST_CASE:
 
 func FuzzMultiWrite(f *testing.F) {
 
-	func() { //generate corpus
+	func() { // generate corpus
 
 		seed := time.Now().UnixNano()
 		rand.Seed(seed)
 
-		f.Logf("[seed] %v", seed) //recreate the testcase using this seed
+		f.Logf("[seed] %v", seed) // recreate the testcase using this seed
 
-		for i := 0; i < 10; i++ { //Corpus of <i>
+		for i := 0; i < 10; i++ { // Corpus of <i>
 			fuzzer := fuzz.New()
 			var rdbCount, wdbCount uint8
 			fuzzer.Fuzz(&rdbCount)
@@ -302,11 +302,11 @@ func FuzzMultiWrite(f *testing.F) {
 
 			lbPolicyID := rand.Uint32()
 
-			//f.Add(uint(1), uint(2), uint8(lbPolicyID))
+			// f.Add(uint(1), uint(2), uint8(lbPolicyID))
 			f.Add(wdbCount, rdbCount, uint8(lbPolicyID))
 
 			if !testing.Short() {
-				break //short circuiting with 1 testcase
+				break // short circuiting with 1 testcase
 			}
 		}
 	}()
