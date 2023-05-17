@@ -54,6 +54,12 @@ jobs:
         timeout-minutes: 2
         run: go build -v
 
+      - name: Install Test Deps
+        run: |
+          go install github.com/mfridman/tparse@latest
+          go install gotest.tools/gotestsum@latest 
+  
+
   fuzz-multiwrite:
     needs: [ build ]
     runs-on: ubuntu-latest
