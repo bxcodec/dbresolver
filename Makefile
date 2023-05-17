@@ -22,11 +22,11 @@ deps:
 TESTS_ARGS := --format testname --jsonfile gotestsum.json.out
 TESTS_ARGS += --max-fails 2
 TESTS_ARGS += -- ./...
-TESTS_ARGS += -test.parallel 2
-TESTS_ARGS += -test.count    1
-TESTS_ARGS += -test.failfast
-TESTS_ARGS += -test.coverprofile   coverage.out
-TESTS_ARGS += -test.timeout        60s
+TESTS_ARGS += -parallel 2
+TESTS_ARGS += -count    1
+TESTS_ARGS += -failfast
+TESTS_ARGS += -coverprofile   coverage.out
+TESTS_ARGS += -timeout        60s
 TESTS_ARGS += -race
 run-tests: $(GOTESTSUM)
 	@ gotestsum $(TESTS_ARGS) -short
