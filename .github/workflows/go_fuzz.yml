@@ -82,8 +82,8 @@ jobs:
       - name: Fuzz Short
         run: |
           #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
-               go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
-               tparse -follow -all -sort=elapsed
+          go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
+          tparse -follow -all -sort=elapsed
 
 
 
