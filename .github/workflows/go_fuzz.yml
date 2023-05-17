@@ -59,6 +59,10 @@ jobs:
           go install gotest.tools/gotestsum@latest
           tparse -h
 
+      - name: Install tparse
+        uses: mfridman/tparse-action@v1
+
+
   fuzz-multiwrite:
     needs: [ build ]
     runs-on: ubuntu-latest
