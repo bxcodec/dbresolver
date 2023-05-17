@@ -28,7 +28,7 @@ jobs:
 
     env:
       GOCACHE: /tmp/go/gocache
-      GOBIN: ${{ GITHUB_WORKSPACE }}/bin
+      GOBIN: ${{ github.workspace }}/bin
 
     steps:
       - uses: actions/checkout@v3
