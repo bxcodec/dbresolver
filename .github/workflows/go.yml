@@ -24,6 +24,7 @@ jobs:
           check-latest: true
 
       - name: Linter
+        timeout-minutes: 3m
         run: make lint-prepare && make lint
 
       - name: Test

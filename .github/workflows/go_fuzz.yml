@@ -49,6 +49,7 @@ jobs:
         go-version-file: go.mod
 
     - name: Build
+      timeout-minutes: 3m
       run: go build -v
 
   fuzz-multiwrite:
