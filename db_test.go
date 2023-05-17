@@ -338,7 +338,6 @@ func FuzzMultiWrite(f *testing.F) {
 		})
 
 	})
-
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {

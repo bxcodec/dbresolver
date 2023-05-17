@@ -141,6 +141,9 @@ issues:
     - path: \.go
       text: "commentFormatting: put a space between `//` and comment text"
 
+    - path: \.go
+      text: "unnecessary leading newline (whitespace)"
+
     - path: db_test.go
       linters:
         - goconst
