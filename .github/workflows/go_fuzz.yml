@@ -87,6 +87,7 @@ jobs:
         continue-on-error: true
 
       - name: Fuzz normalize
+        if: ${{ failure() }}
         uses: nick-fields/retry@v2
         with:
           max_attempts: 10
