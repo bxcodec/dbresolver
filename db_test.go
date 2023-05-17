@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/gofuzz"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	fuzz "github.com/google/gofuzz"
 )
 
 type DBConfig struct {
