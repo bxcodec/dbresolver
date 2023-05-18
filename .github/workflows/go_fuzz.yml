@@ -9,6 +9,10 @@ on:
       - 'main'
   workflow_dispatch:
 
+  schedule:
+    - cron: '0 * */1 * *'
+
+
 concurrency:
   group: go_fuzz
   cancel-in-progress: true
