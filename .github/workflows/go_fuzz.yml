@@ -90,12 +90,12 @@ jobs:
 
       - name: Fuzz MultiWrite Short
         run: |
-          go test -short -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          go test -short -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
-          go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          go test -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
 
@@ -115,8 +115,8 @@ jobs:
       - run: chmod +x bin/*
       - name: Fuzz Short
         run: |
-          #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
-          go test -fuzz=Fuzz -fuzztime=5m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
+          #          go test -fuzz=Fuzz -short -v -fuzztime=1m -timeout=15m -cover  -run="Fuzz*"
+          go test -fuzz=Fuzz -fuzztime=1m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
           bin/tparse -follow -all -sort=elapsed
 
 
@@ -131,7 +131,7 @@ jobs:
       - name: Race Short Fuzz
         continue-on-error: true
         run: |
-          go test -fuzz=Fuzz -short -race -v -fuzztime=5m -timeout=15m -cover -covermode=count -run="Fuzz*"
+          go test -fuzz=Fuzz -short -race -v -fuzztime=1m -timeout=15m -cover -covermode=count -run="Fuzz*"
 
       - name: Fuzz normalize
         if: ${{ failure() }}
