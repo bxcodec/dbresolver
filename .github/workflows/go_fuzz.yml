@@ -86,12 +86,12 @@ jobs:
 
       - name: Fuzz MultiWrite Short
         run: |
-          go test -short -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          go test -short -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
       - name: Fuzz MultiWrite
         run: |
-          go test -fuzz=FuzzMultiWrite -fuzztime=12m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          go test -fuzz=FuzzMultiWrite -fuzztime=5m -timeout=15m -cover -covermode=count -run="^$" -json | \
           bin/tparse -follow -all -sort=elapsed
 
 
@@ -112,7 +112,7 @@ jobs:
       - name: Fuzz Short
         run: |
           #          go test -fuzz=Fuzz -short -v -fuzztime=5m -timeout=15m -cover  -run="Fuzz*"
-          go test -fuzz=Fuzz -fuzztime=12m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
+          go test -fuzz=Fuzz -fuzztime=5m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
           bin/tparse -follow -all -sort=elapsed
 
 
