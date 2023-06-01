@@ -253,6 +253,8 @@ func testMW(t *testing.T, config DBConfig) {
 }
 
 func TestMultiWrite(t *testing.T) {
+	t.Parallel()
+
 	loadBalancerPolices := []LoadBalancerPolicy{
 		RoundRobinLB,
 		RandomLB,
@@ -305,7 +307,9 @@ BEGIN_TEST_CASE:
 
 	dbConfig.lbPolicy = loadBalancerPolicy
 
-	testMW(t, dbConfig)
+	t.Run(fmt.Sprintf("DBCluster P%dR%d", dbConfig.primaryDBCount, dbConfig.replicaDBCount), func(t *testing.T) {
+		testMW(t, dbConfig)
+	})
 
 	if testing.Short() {
 		return
@@ -359,8 +363,6 @@ func FuzzMultiWrite(f *testing.F) {
 		t.Run(fmt.Sprintf("%v", config), func(t *testing.T) {
 
 			dbConf := config
-
-			t.Parallel()
 
 			testMW(t, dbConf)
 		})
