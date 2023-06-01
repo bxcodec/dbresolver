@@ -66,7 +66,7 @@ func (db *sqlDB) PrimaryDBs() []*sql.DB {
 	return db.primaries
 }
 
-// ReplicaDBs PrimaryDBs return all the active replica DB
+// ReplicaDBs return all the active replica DB
 func (db *sqlDB) ReplicaDBs() []*sql.DB {
 	return db.replicas
 }
