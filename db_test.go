@@ -125,7 +125,7 @@ func testMW(t *testing.T, config DBConfig) {
 			handleDBError(t, err)
 
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+				t.Errorf("sqlmock:unmet expectations: %s", err)
 				t.SkipNow() //FIXME: remove
 			}
 		}
@@ -181,7 +181,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -189,7 +189,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -214,7 +214,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -223,7 +223,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -243,7 +243,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectClose()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -251,7 +251,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectClose()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s", err)
 				}
 			}(mock)
 		}
@@ -377,6 +377,13 @@ func FuzzMultiWrite(f *testing.F) {
 }
 
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
-	db, mock, err = sqlmock.New(sqlmock.MonitorPingsOption(true))
+	db, mock, err = sqlmock.New(sqlmock.MonitorPingsOption(true), sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	return
+}
+
+type QueryMatcher struct {
+}
+
+func (*QueryMatcher) Match(expectedSQL string, actualSQL string) error {
+	return nil
 }
