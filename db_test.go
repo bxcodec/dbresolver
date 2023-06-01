@@ -73,7 +73,7 @@ func testMW(t *testing.T, config DBConfig) {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			switch i % 6 {
+			switch i % 5 {
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
@@ -83,7 +83,7 @@ func testMW(t *testing.T, config DBConfig) {
 				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0)).WillDelayFor(time.Millisecond * 50)
 				_, err = resolver.ExecContext(context.Background(), query)
 			case 2:
-				t.Log("begin")
+				t.Log("transactions:begin")
 
 				mock.ExpectBegin()
 				tx, err := resolver.Begin()
@@ -97,27 +97,30 @@ func testMW(t *testing.T, config DBConfig) {
 
 				mock.ExpectCommit()
 				tx.Commit()
+
 			case 3:
+				t.Log("tx: query-return clause")
+
 				mock.ExpectBegin()
-				resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				tx, err := resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
-				t.Log("begin transaction")
-			case 4:
-				query := `update users set name="Hiro" where id=1 RETURNING id,name`
-				mock.ExpectQuery(query)
-				_, err = resolver.Query(query)
 				handleDBError(t, err)
 
-				t.Log("query Returning clause")
-			case 5:
 				query := "INSERT INTO users(id,name) VALUES ($1,$2) RETURNING id"
-				mock.ExpectQuery(query).WithArgs(1, "Hiro").WillReturnRows().WillDelayFor(time.Second * 1)
-				_, err = resolver.QueryContext(context.Background(), query, 1, "Hiro")
-				handleDBError(t, err)
+				mock.ExpectQuery(query).
+					WithArgs(1, "Hiro").
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
-				t.Log("queryCtx Returning clause")
+				_, err = tx.Query(query, 1, "Hiro")
+
+				mock.ExpectCommit()
+				tx.Commit()
+			case 4:
+				query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
+				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+				_, err = resolver.Query(query)
 			default:
 				t.Fatal("developer needs to work on the tests")
 			}
