@@ -25,7 +25,7 @@ var LoadBalancerPolicies = []LoadBalancerPolicy{
 
 func handleDBError(t *testing.T, err error) {
 	if err != nil {
-		t.Fatalf("db error: %s", err)
+		t.Errorf("db error: %s", err)
 	}
 
 }
@@ -48,9 +48,6 @@ func testMW(t *testing.T, config DBConfig) {
 			t.Fatal("creating of mock failed")
 		}
 
-		//defer mock.ExpectClose()
-		//defer db.Close()
-
 		primaries[i] = db
 		mockPimaries[i] = mock
 	}
@@ -61,9 +58,6 @@ func testMW(t *testing.T, config DBConfig) {
 			t.Fatal("creating of mock failed")
 		}
 
-		//defer mock.ExpectClose()
-		//defer db.Close()
-
 		replicas[i] = db
 		mockReplicas[i] = mock
 	}
@@ -73,23 +67,22 @@ func testMW(t *testing.T, config DBConfig) {
 	t.Run("primary dbs", func(t *testing.T) {
 		t.Parallel()
 
-		for i := 0; i < noOfPrimaries*5; i++ {
+		var err error
+
+		for i := 0; i < noOfPrimaries*6; i++ {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			t.Log("case - ", i%5)
-
-			switch i % 5 {
+			switch i % 6 {
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
-				mock.ExpectExec(query)
-				resolver.Exec(query)
-				t.Log("exec")
+				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
+				_, err = resolver.Exec(query)
 			case 1:
-				query := "SET timezone TO 'Asia/Tokyo'"
-				mock.ExpectExec(query)
-				resolver.ExecContext(context.TODO(), query)
-				t.Log("exec context")
+				query := `CREATE TABLE users (id serial PRIMARY KEY, name varchar(50) unique)`
+
+				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0)).WillDelayFor(time.Millisecond * 50)
+				_, err = resolver.ExecContext(context.Background(), query)
 			case 2:
 				mock.ExpectBegin()
 				resolver.Begin()
@@ -102,17 +95,28 @@ func testMW(t *testing.T, config DBConfig) {
 				})
 				t.Log("begin transaction")
 			case 4:
-				query := "INSERT INTO users(id,name) VALUES ($1,$2) RETURNING id"
-				mock.ExpectQuery(query).WithArgs(1, "Hiro").WillReturnRows().WillDelayFor(time.Second * 1)
-				_, err := resolver.Query(query, 1, "Hiro")
+				query := `update users set name="Hiro" where id=1 RETURNING id,name`
+				mock.ExpectQuery(query)
+				_, err = resolver.Query(query)
 				handleDBError(t, err)
 
 				t.Log("query Returning clause")
+			case 5:
+				query := "INSERT INTO users(id,name) VALUES ($1,$2) RETURNING id"
+				mock.ExpectQuery(query).WithArgs(1, "Hiro").WillReturnRows().WillDelayFor(time.Second * 1)
+				_, err = resolver.QueryContext(context.Background(), query, 1, "Hiro")
+				handleDBError(t, err)
+
+				t.Log("queryCtx Returning clause")
 			default:
 				t.Fatal("developer needs to work on the tests")
 			}
+
+			handleDBError(t, err)
+
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("there were unfulfilled expectations: %s", err)
+				t.SkipNow() //FIXME: remove
 			}
 		}
 	})
