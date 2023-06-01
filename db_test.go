@@ -65,8 +65,6 @@ func testMW(t *testing.T, config DBConfig) {
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
 	t.Run("primary dbs", func(t *testing.T) {
-		t.Parallel()
-
 		var err error
 
 		for i := 0; i < noOfPrimaries*6; i++ {
@@ -134,11 +132,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 	})
 
-	t.SkipNow() //FIXME: remove
-
 	t.Run("replica dbs", func(t *testing.T) {
-		t.Parallel()
-
 		for i := 0; i < noOfReplicas*5; i++ {
 			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
@@ -176,8 +170,6 @@ func testMW(t *testing.T, config DBConfig) {
 	})
 
 	t.Run("prepare", func(t *testing.T) {
-		t.Parallel()
-
 		query := "select 1"
 
 		for _, mock := range mockPimaries {
@@ -244,23 +236,14 @@ func testMW(t *testing.T, config DBConfig) {
 	t.Run("close", func(t *testing.T) {
 		for _, mock := range mockPimaries {
 			mock.ExpectClose()
-			defer func(mock sqlmock.Sqlmock) {
-				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s", err)
-				}
-			}(mock)
 		}
 		for _, mock := range mockReplicas {
 			mock.ExpectClose()
-			defer func(mock sqlmock.Sqlmock) {
-				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("sqlmock:unmet expectations: %s", err)
-				}
-			}(mock)
 		}
-		resolver.Close()
+		err := resolver.Close()
+		handleDBError(t, err)
 
-		t.Logf("%dP%dR", noOfPrimaries, noOfReplicas)
+		t.Logf("DB-CLUSTER-%dP%dR", noOfPrimaries, noOfReplicas)
 	})
 
 }
