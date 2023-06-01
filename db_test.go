@@ -71,7 +71,7 @@ func testMW(t *testing.T, config DBConfig) {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
-			switch i % 5 {
+			switch i % 6 {
 			case 0:
 				query := "SET timezone TO 'Asia/Tokyo'"
 				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
@@ -119,6 +119,11 @@ func testMW(t *testing.T, config DBConfig) {
 				query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 				_, err = resolver.Query(query)
+
+			case 5:
+				query := `delete from users where id=1 returning id,name`
+				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+				resolver.QueryRow(query)
 			default:
 				t.Fatal("developer needs to work on the tests")
 			}
