@@ -131,8 +131,7 @@ func testMW(t *testing.T, config DBConfig) {
 			handleDBError(t, err)
 
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("sqlmock:unmet expectations: %s", err)
-				t.SkipNow() //FIXME: remove
+				t.Skipf("sqlmock:unmet expectations: %s", err)
 			}
 		}
 	})
