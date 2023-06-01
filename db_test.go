@@ -23,6 +23,13 @@ var LoadBalancerPolicies = []LoadBalancerPolicy{
 	RoundRobinLB,
 }
 
+func handleDBError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatalf("db error: %s", err)
+	}
+
+}
+
 func testMW(t *testing.T, config DBConfig) {
 
 	noOfPrimaries, noOfReplicas := int(config.primaryDBCount), int(config.replicaDBCount)
@@ -95,9 +102,11 @@ func testMW(t *testing.T, config DBConfig) {
 				})
 				t.Log("begin transaction")
 			case 4:
-				query := `INSERT INTO user (id,name) VALUES (1,"Hiro") RETURNING id`
-				mock.ExpectQuery(query)
-				resolver.Query(query)
+				query := "INSERT INTO users(id,name) VALUES ($1,$2) RETURNING id"
+				mock.ExpectQuery(query).WithArgs(1, "Hiro").WillReturnRows().WillDelayFor(time.Second * 1)
+				_, err := resolver.Query(query, 1, "Hiro")
+				handleDBError(t, err)
+
 				t.Log("query Returning clause")
 			default:
 				t.Fatal("developer needs to work on the tests")

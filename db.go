@@ -187,8 +187,8 @@ func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 // The args are for any placeholder parameters in the query.
 func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
 	var curDB *sql.DB
-	query = strings.ToUpper(query)
-	writeFlag := strings.Contains(query, "RETURNING")
+	_query := strings.ToUpper(query)
+	writeFlag := strings.Contains(_query, "RETURNING")
 
 	if writeFlag {
 		curDB = db.ReadWrite()
