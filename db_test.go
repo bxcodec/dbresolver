@@ -243,7 +243,7 @@ func testMW(t *testing.T, config DBConfig) {
 		err := resolver.Close()
 		handleDBError(t, err)
 
-		t.Logf("DB-CLUSTER-%dP%dR", noOfPrimaries, noOfReplicas)
+		t.Logf("closed:DB-CLUSTER-%dP%dR", noOfPrimaries, noOfReplicas)
 	})
 
 }
