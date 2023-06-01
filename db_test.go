@@ -79,14 +79,24 @@ func testMW(t *testing.T, config DBConfig) {
 				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
 				_, err = resolver.Exec(query)
 			case 1:
-				query := `CREATE TABLE users (id serial PRIMARY KEY, name varchar(50) unique)`
-
+				query := "CREATE DATABASE test; use test"
 				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0)).WillDelayFor(time.Millisecond * 50)
 				_, err = resolver.ExecContext(context.Background(), query)
 			case 2:
-				mock.ExpectBegin()
-				resolver.Begin()
 				t.Log("begin")
+
+				mock.ExpectBegin()
+				tx, err := resolver.Begin()
+				handleDBError(t, err)
+
+				query := `CREATE TABLE users (id serial PRIMARY KEY, name varchar(50) unique)`
+				mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
+
+				_, err = tx.Exec(query)
+				handleDBError(t, err)
+
+				mock.ExpectCommit()
+				tx.Commit()
 			case 3:
 				mock.ExpectBegin()
 				resolver.BeginTx(context.TODO(), &sql.TxOptions{
@@ -115,7 +125,7 @@ func testMW(t *testing.T, config DBConfig) {
 			handleDBError(t, err)
 
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("there were unfulfilled expectations: %s", err)
+				t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				t.SkipNow() //FIXME: remove
 			}
 		}
@@ -171,7 +181,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
@@ -179,7 +189,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
@@ -204,7 +214,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
@@ -213,7 +223,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
@@ -233,7 +243,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectClose()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
@@ -241,7 +251,7 @@ func testMW(t *testing.T, config DBConfig) {
 			mock.ExpectClose()
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
-					t.Errorf("there were unfulfilled expectations: %s", err)
+					t.Errorf("sqlmock:unmet expectations: %s: %s", err)
 				}
 			}(mock)
 		}
