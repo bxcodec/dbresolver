@@ -186,13 +186,14 @@ func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
 func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
-	curDB := db.ReadOnly()
-
+	var curDB *sql.DB
 	query = strings.ToUpper(query)
 	writeFlag := strings.Contains(query, "RETURNING")
 
 	if writeFlag {
 		curDB = db.ReadWrite()
+	} else {
+		curDB = db.ReadOnly()
 	}
 
 	rows, err = curDB.QueryContext(ctx, query, args...)
@@ -205,14 +206,14 @@ func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interfa
 // QueryRow executes a query that is expected to return at most one row.
 // QueryRow always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
+func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row { //TODO: ReadWrite
 	return db.QueryRowContext(backgroundCtx, query, args...)
 }
 
 // QueryRowContext executes a query that is expected to return at most one row.
 // QueryRowContext always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row { //TODO: Readwrite
 	row := db.ReadOnly().QueryRowContext(ctx, query, args...)
 	if isDBConnectionError(row.Err()) {
 		row = db.ReadWrite().QueryRowContext(ctx, query, args...)
