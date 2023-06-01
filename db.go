@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"strings"
 	"time"
 
 	"go.uber.org/multierr"
@@ -65,7 +66,7 @@ func (db *sqlDB) PrimaryDBs() []*sql.DB {
 	return db.primaries
 }
 
-// PrimaryDBs return all the active replica DB
+// ReplicaDBs PrimaryDBs return all the active replica DB
 func (db *sqlDB) ReplicaDBs() []*sql.DB {
 	return db.replicas
 }
@@ -178,26 +179,32 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-// Query uses a radonly db as the physical db.
 func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return db.QueryContext(backgroundCtx, query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-// QueryContext uses a radonly db as the physical db.
-func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	rows, err := db.ReadOnly().QueryContext(ctx, query, args...)
-	if isDBConnectionError(err) {
+func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
+	curDB := db.ReadOnly()
+
+	query = strings.ToUpper(query)
+	writeFlag := strings.Contains(query, "RETURNING")
+
+	if writeFlag {
+		curDB = db.ReadWrite()
+	}
+
+	rows, err = curDB.QueryContext(ctx, query, args...)
+	if isDBConnectionError(err) && !writeFlag {
 		rows, err = db.ReadWrite().QueryContext(ctx, query, args...)
 	}
-	return rows, err
+	return
 }
 
 // QueryRow executes a query that is expected to return at most one row.
 // QueryRow always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-// QueryRow uses a radonly db as the physical db.
 func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
 	return db.QueryRowContext(backgroundCtx, query, args...)
 }
@@ -205,7 +212,6 @@ func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
 // QueryRowContext executes a query that is expected to return at most one row.
 // QueryRowContext always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-// QueryRowContext uses a radonly db as the physical db.
 func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	row := db.ReadOnly().QueryRowContext(ctx, query, args...)
 	if isDBConnectionError(row.Err()) {
