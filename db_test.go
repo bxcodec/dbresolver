@@ -303,7 +303,9 @@ BEGIN_TEST_CASE:
 
 	testMW(t, dbConfig)
 
-	return
+	if testing.Short() {
+		return
+	}
 
 	goto BEGIN_TEST_CASE
 }
@@ -328,7 +330,7 @@ func FuzzMultiWrite(f *testing.F) {
 			// f.Add(uint(1), uint(2), uint8(lbPolicyID))
 			f.Add(wdbCount, rdbCount, uint8(lbPolicyID))
 
-			if !testing.Short() {
+			if testing.Short() {
 				break // short circuiting with 1 testcase
 			}
 		}
