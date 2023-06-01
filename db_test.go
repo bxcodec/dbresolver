@@ -117,7 +117,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 	})
 
-	t.SkipNow()
+	t.SkipNow() //FIXME: remove
 
 	t.Run("replica dbs", func(t *testing.T) {
 		t.Parallel()
