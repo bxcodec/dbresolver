@@ -1,5 +1,6 @@
 package dbresolver
 
+// nolint
 import (
 	"fmt"
 	"github.com/google/gofuzz"
