@@ -120,6 +120,20 @@ jobs:
             echo "All Fuzz Tests have passed"
           fi  
 
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "testcases"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        if: steps.check_files.outputs.files_exists == 'true'
+        with:
+          name: go-fuzz-testcases
+          path: ${{ github.workspace }}/testcases
+
+
 
 
 
