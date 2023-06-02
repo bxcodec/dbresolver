@@ -329,13 +329,13 @@ func FuzzMultiWrite(f *testing.F) {
 			fuzzer.Fuzz(&rdbCount)
 			fuzzer.Fuzz(&wdbCount)
 
-			lbPolicyID := rand.Uint32()
+			lbPolicyID := rand.Uint64()
 
 			// f.Add(uint(1), uint(2), uint8(lbPolicyID))
 			f.Add(wdbCount, rdbCount, uint8(lbPolicyID))
 
 			if testing.Short() {
-				break // short circuiting with 1 testcase
+				break // short-circuiting with 1 testcase
 			}
 		}
 	}()
