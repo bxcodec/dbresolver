@@ -107,7 +107,7 @@ jobs:
       - name: Collect Testcases
         if: ${{ failure() }} || true
         run: |
-          if ${{ failure() }} || [ -d "testcases" ]; then
+          if [ -d "testcases" ]; then
             echo "Fuzz tests have failed"
             git add -f testcases
             git commit -m "ci: fuzz tests failed on $date"
