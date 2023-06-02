@@ -109,7 +109,8 @@ jobs:
       #          TODO: similarly write for every fuzz function
 
       - name: Collect testdata
-        if: ${{ failure() }} || true
+        #        if: ${{ failure() }} || true
+        if: github.event_name == 'push' && github.event.pull_request == null
         run: |
           if [ -d "testdata" ]; then
             echo "Fuzz tests have failed"
