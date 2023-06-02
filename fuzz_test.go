@@ -11,9 +11,8 @@ func FuzzMultiWrite(f *testing.F) {
 
 		var rdbCount, wdbCount, lbPolicyID uint8 = 1, 1, 1
 
-		if testing.Short() {
+		if !testing.Short() {
 			fuzzer := fuzz.New()
-
 			fuzzer.Fuzz(&rdbCount)
 			fuzzer.Fuzz(&wdbCount)
 			fuzzer.Fuzz(&lbPolicyID)
@@ -23,9 +22,6 @@ func FuzzMultiWrite(f *testing.F) {
 	}()
 
 	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
-		if !testing.Short() {
-			t.Fatal()
-		}
 
 		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
 
