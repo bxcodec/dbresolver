@@ -100,11 +100,11 @@ func testMW(t *testing.T, config DBConfig) {
 				t.Log("tx: query-return clause")
 
 				mock.ExpectBegin()
-				tx, err := resolver.BeginTx(context.TODO(), &sql.TxOptions{
+				tx, err1 := resolver.BeginTx(context.TODO(), &sql.TxOptions{
 					Isolation: sql.LevelDefault,
 					ReadOnly:  false,
 				})
-				handleDBError(t, err)
+				handleDBError(t, err1)
 
 				query := "INSERT INTO users(id,name) VALUES ($1,$2) RETURNING id"
 				mock.ExpectQuery(query).
