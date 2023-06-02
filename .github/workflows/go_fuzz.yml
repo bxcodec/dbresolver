@@ -106,8 +106,6 @@ jobs:
 
       - name: Collect Testcases
         #        if:  ${{ failure() }}
-
-
         run: |
           if ${{ failure() }} || [ -d "testcases" ]; then
             echo "Fuzz tests have failed"
