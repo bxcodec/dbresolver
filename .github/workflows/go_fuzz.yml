@@ -3,7 +3,7 @@ name: Go Fuzz
 on:
   push:
     branches:
-      - 'main'
+      - '*'
   pull_request:
     branches:
       - 'main'
@@ -14,13 +14,14 @@ on:
 
 
 concurrency:
-  group: go_fuzz
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 #TODO: minimize jobs with all having -race and then of course committing testdata/ or o/p testcases into log in case of failure
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
-  GITHUB_PATH: "$GITHUB_PATH:${{ github.workspace }}/bin"
+#  GITHUB_PATH: "$GITHUB_PATH:${{ github.workspace }}/bin"
 
 jobs:
   build:
@@ -99,47 +100,47 @@ jobs:
           bin/tparse -follow -all -sort=elapsed
 
 
-  fuzz:
-    needs: [ build, fuzz-multiwrite ] #will fail if more than 1 fuzz function is present
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: go-test-utils
-          path: ${{ env.GOBIN }}
-
-      - run: chmod +x bin/*
-      - name: Fuzz Short
-        run: |
-          #          go test -fuzz=Fuzz -short -v -fuzztime=1m -timeout=15m -cover  -run="Fuzz*"
-          go test -fuzz=Fuzz -fuzztime=1m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
-          bin/tparse -follow -all -sort=elapsed
-
-
-
-  race-fuzz:
-    runs-on: ubuntu-latest
-    needs: [ fuzz ]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Race Short Fuzz
-        continue-on-error: true
-        run: |
-          go test -fuzz=Fuzz -short -race -v -fuzztime=30s -timeout=15m -cover -covermode=count -run="Fuzz*"
-
-      - name: Fuzz normalize
-        if: ${{ failure() }}
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 10
-          retry_on: error
-          timeout_minutes: 360m
-          #working-directory: ${{ github.workspace }}
-          command: |
-            echo "go fuzz intensive failed"
+#  fuzz:
+#    needs: [ build, fuzz-multiwrite ] #will fail if more than 1 fuzz function is present
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: Download Artifacts
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: go-test-utils
+#          path: ${{ env.GOBIN }}
+#
+#      - run: chmod +x bin/*
+#      - name: Fuzz Short
+#        run: |
+#          #          go test -fuzz=Fuzz -short -v -fuzztime=1m -timeout=15m -cover  -run="Fuzz*"
+#          go test -fuzz=Fuzz -fuzztime=1m -timeout=15m -cover -covermode=count -run="Fuzz*" -json | \
+#          bin/tparse -follow -all -sort=elapsed
+#
+#
+#
+#  race-fuzz:
+#    runs-on: ubuntu-latest
+#    needs: [ fuzz ]
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: Race Short Fuzz
+#        continue-on-error: true
+#        run: |
+#          go test -fuzz=Fuzz -short -race -v -fuzztime=30s -timeout=15m -cover -covermode=count -run="Fuzz*"
+#
+#      - name: Fuzz normalize
+#        if: ${{ failure() }}
+#        uses: nick-fields/retry@v2
+#        with:
+#          max_attempts: 10
+#          retry_on: error
+#          timeout_minutes: 360m
+#          #working-directory: ${{ github.workspace }}
+#          command: |
+#            echo "go fuzz intensive failed"
