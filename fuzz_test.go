@@ -1,10 +1,10 @@
 package dbresolver
 
-// nolint
 import (
 	"fmt"
-	"github.com/google/gofuzz"
 	"testing"
+
+	fuzz "github.com/google/gofuzz"
 )
 
 func FuzzMultiWrite(f *testing.F) {
