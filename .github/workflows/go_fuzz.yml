@@ -67,20 +67,16 @@ jobs:
 
       - name: Fuzz Short
         run: |
-          go test -fuzz -fuzztime=20s -cover -covermode=count -run="Fuzz*" -json -short | \
+          go test -fuzz -fuzztime=30s -cover -covermode=count -run="Fuzz*" -json -short | \
           tparse -follow -all -sort=elapsed 
 
 
-  fuzz-multiwrite:
+  fuzz:
     needs: [ setup ]
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        timeout-minutes: 600
 
       - name: Download Artifacts
         uses: actions/download-artifact@v2
@@ -88,17 +84,17 @@ jobs:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
-      - run: chmod +x bin/*
+      - run: chmod +x ${{ env.GOBIN }}/*
 
-      - name: Fuzz MultiWrite Short
+      - name: Fuzzing
         run: |
-          go test -short -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
+          go test -fuzz -fuzztime=2m -timeout=15s -cover -covermode=count -run="Fuzz*" -json | \
           bin/tparse -follow -all -sort=elapsed
 
-      - name: Fuzz MultiWrite
-        run: |
-          go test -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
-          bin/tparse -follow -all -sort=elapsed
+#      - name: Fuzz All
+#        run: |
+#          go test -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
+#          bin/tparse -follow -all -sort=elapsed
 
 
 #  fuzz:

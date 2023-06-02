@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	fuzz "github.com/google/gofuzz"
 	"testing"
 	"time"
 
@@ -317,22 +318,22 @@ func FuzzMultiWrite(f *testing.F) {
 
 		var rdbCount, wdbCount, lbPolicyID uint8 = 1, 1, 1
 
-		//if !testing.Short() { //FIXME: failing due to invalid generation of asci chars
-		//	fuzzer := fuzz.New()
-		//
-		//	fuzzer.Fuzz(&rdbCount)
-		//	fuzzer.Fuzz(&wdbCount)
-		//	fuzzer.Fuzz(&lbPolicyID)
-		//}
+		if !testing.Short() {
+			fuzzer := fuzz.New()
+
+			fuzzer.Fuzz(&rdbCount)
+			fuzzer.Fuzz(&wdbCount)
+			fuzzer.Fuzz(&lbPolicyID)
+		}
 
 		f.Add(wdbCount, rdbCount, lbPolicyID)
 	}()
 
 	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
 
-		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
+		//f.Fatal(wdbCount)
 
-		t.Log("Policy", LoadBalancerPolicies[policyID])
+		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
 
 		config := DBConfig{
 			wdbCount, rdbCount, LoadBalancerPolicies[policyID],
@@ -364,4 +365,8 @@ type QueryMatcher struct {
 
 func (*QueryMatcher) Match(expectedSQL, actualSQL string) error {
 	return nil
+}
+
+func FuzzNew(f *testing.F) {
+	f.SkipNow()
 }
