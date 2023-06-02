@@ -99,12 +99,8 @@ jobs:
       - name: FuzzMultiWrite
         continue-on-error: true
         run: |
-          go test -short -json -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
+          go test -json -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
           bin/tparse -follow -all -sort=elapsed
-
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        timeout-minutes: 600
 
       #          TODO: similarly write for every fuzz function
 
