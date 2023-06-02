@@ -105,7 +105,7 @@ jobs:
       #          TODO: similarly write for every fuzz function
 
       - name: Collect Testcases
-        #        if:  ${{ failure() }}
+        if: ${{ failure() }} || true
         run: |
           if ${{ failure() }} || [ -d "testcases" ]; then
             echo "Fuzz tests have failed"
@@ -114,7 +114,8 @@ jobs:
             git push
           else
             echo "All Fuzz Tests have passed"
-          fi
+          fi  
+
 
 
 
