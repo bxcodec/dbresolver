@@ -65,11 +65,12 @@ jobs:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
-      - name: Fuzz Short
+      - name: Test Fuzz Functions
         run: |
-          go test -fuzz -fuzztime=30s -cover -covermode=count -run="Fuzz*" -json -short | \
+          go test -cover -covermode=atomic -timeout=15m -race -run="Fuzz*" -json -short | \
           tparse -follow -all -sort=elapsed 
-
+  
+  
 
   fuzz:
     needs: [ setup ]
@@ -86,15 +87,36 @@ jobs:
 
       - run: chmod +x ${{ env.GOBIN }}/*
 
-      - name: Fuzzing
+      - name: FuzzMultiWrite
+        continue-on-error: true
         run: |
-          go test -fuzz -fuzztime=2m -timeout=15s -cover -covermode=count -run="Fuzz*" -json | \
+          go test -json -fuzz -fuzztime=2m -timeout=15s -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
           bin/tparse -follow -all -sort=elapsed
 
-#      - name: Fuzz All
-#        run: |
-#          go test -fuzz=FuzzMultiWrite -fuzztime=1m -timeout=15m -cover -covermode=count -run="^$" -json | \
-#          bin/tparse -follow -all -sort=elapsed
+      #          TODO: similarly write for every fuzz function
+
+      - name: Collect Testcases
+        #        if:  ${{ failure() }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        permissions:
+          contents: write
+          pull-requests: write
+          issues: read
+          packages: none
+        run: |
+          if ${{ failure() }} || [ -d "testcases" ]; then
+            echo "Fuzz tests have failed"
+            git add -f testcases
+            git commit -m "ci: fuzz tests failed on $date"
+            git push
+          else
+            echo "All Fuzz Tests have passed"
+          fi
+
+
+
 
 
 #  fuzz:
@@ -141,3 +163,7 @@ jobs:
 #          #working-directory: ${{ github.workspace }}
 #          command: |
 #            echo "go fuzz intensive failed"
+
+#  Fails if multiple Fuzz Functions match
+#  go test -fuzz=Fuzz -fuzztime=30s -cover -covermode=count -run="Fuzz*" -json -short | \
+#  tparse -follow -all -sort=elapsed
