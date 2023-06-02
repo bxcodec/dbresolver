@@ -23,6 +23,8 @@ func FuzzMultiWrite(f *testing.F) {
 	}()
 
 	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
+		t.Fatal()
+
 		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
 
 		config := DBConfig{
