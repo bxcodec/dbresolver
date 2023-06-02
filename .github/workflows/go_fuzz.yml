@@ -99,7 +99,7 @@ jobs:
       - name: FuzzMultiWrite
         continue-on-error: true
         run: |
-          go test -json -fuzz -fuzztime=2m -timeout=15s -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
+          go test -json -fuzz -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
           bin/tparse -follow -all -sort=elapsed
 
       #          TODO: similarly write for every fuzz function
