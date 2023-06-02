@@ -141,11 +141,10 @@ issues:
     - path: \.go
       text: "commentFormatting: put a space between `//` and comment text"
 
-    - path: db_test.go
+    - path: _test.go
       linters:
         - whitespace
       text: "unnecessary (leading|trailing) newline"
-
 
     - path: db_test.go
       linters:
@@ -155,6 +154,16 @@ issues:
         - errcheck
         - gocritic
         - govet
+
+    - path: fuzz_test.go
+      linters:
+        - goconst
+        - funlen
+        - gocyclo
+        - errcheck
+        - gocritic
+        - govet
+
     - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 
