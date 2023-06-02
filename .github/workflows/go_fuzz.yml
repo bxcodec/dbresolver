@@ -25,7 +25,7 @@ env:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 8
 
     steps:
       - uses: actions/checkout@v3
@@ -67,7 +67,7 @@ jobs:
 
       - name: Test Fuzz Functions
         run: |
-          go test -cover -covermode=atomic -timeout=15m -race -run="Fuzz*" -json -short | \
+          go test -cover -covermode=atomic -timeout=8m -race -run="Fuzz*" -json -short | \
           tparse -follow -all -sort=elapsed 
   
   
