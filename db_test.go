@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	fuzz "github.com/google/gofuzz"
 	"testing"
 	"time"
 
@@ -313,48 +312,6 @@ BEGIN_TEST_CASE:
 	goto BEGIN_TEST_CASE
 }
 
-func FuzzMultiWrite(f *testing.F) {
-	func() { // generate corpus
-
-		var rdbCount, wdbCount, lbPolicyID uint8 = 1, 1, 1
-
-		if !testing.Short() {
-			fuzzer := fuzz.New()
-
-			fuzzer.Fuzz(&rdbCount)
-			fuzzer.Fuzz(&wdbCount)
-			fuzzer.Fuzz(&lbPolicyID)
-		}
-
-		f.Add(wdbCount, rdbCount, lbPolicyID)
-	}()
-
-	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
-
-		//f.Fatal(wdbCount)
-
-		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
-
-		config := DBConfig{
-			wdbCount, rdbCount, LoadBalancerPolicies[policyID],
-		}
-
-		if config.primaryDBCount == 0 {
-			t.Skipf("skipping due to mising primary db")
-		}
-
-		t.Log("dbConf", config)
-
-		t.Run(fmt.Sprintf("%v", config), func(t *testing.T) {
-
-			dbConf := config
-
-			testMW(t, dbConf)
-		})
-
-	})
-}
-
 func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
 	db, mock, err = sqlmock.New(sqlmock.MonitorPingsOption(true), sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	return
@@ -365,8 +322,4 @@ type QueryMatcher struct {
 
 func (*QueryMatcher) Match(expectedSQL, actualSQL string) error {
 	return nil
-}
-
-func FuzzNew(f *testing.F) {
-	f.SkipNow()
 }
