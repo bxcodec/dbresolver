@@ -374,6 +374,6 @@ func createMock() (db *sql.DB, mock sqlmock.Sqlmock, err error) {
 type QueryMatcher struct {
 }
 
-func (*QueryMatcher) Match(expectedSQL string, actualSQL string) error {
+func (*QueryMatcher) Match(expectedSQL, actualSQL string) error {
 	return nil
 }
