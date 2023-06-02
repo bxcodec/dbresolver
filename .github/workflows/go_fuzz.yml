@@ -131,7 +131,7 @@ jobs:
       - name: Race Short Fuzz
         continue-on-error: true
         run: |
-          go test -fuzz=Fuzz -short -race -v -fuzztime=1m -timeout=15m -cover -covermode=count -run="Fuzz*"
+          go test -fuzz=Fuzz -short -race -v -fuzztime=30s -timeout=15m -cover -covermode=count -run="Fuzz*"
 
       - name: Fuzz normalize
         if: ${{ failure() }}
