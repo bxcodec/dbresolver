@@ -16,7 +16,7 @@ on:
 concurrency:
   group: go_fuzz
   cancel-in-progress: true
-
+#TODO: minimize jobs with all having -race and then of course committing testdata/ or o/p testcases into log in case of failure
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
