@@ -78,6 +78,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        timeout-minutes: 600
+
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
