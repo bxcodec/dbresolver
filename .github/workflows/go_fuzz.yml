@@ -17,7 +17,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-#TODO: minimize jobs with all having -race and then of course committing testdata/ or o/p testcases into log in case of failure
+#TODO: minimize jobs with all having -race and then of course committing testdata/ or o/p testdata into log in case of failure
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
@@ -99,7 +99,7 @@ jobs:
       - name: FuzzMultiWrite
         continue-on-error: true
         run: |
-          go test -json -fuzz -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
+          go test -json -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
           bin/tparse -follow -all -sort=elapsed
 
       - name: Setup upterm session
@@ -108,12 +108,14 @@ jobs:
 
       #          TODO: similarly write for every fuzz function
 
-      - name: Collect Testcases
+      - name: Collect testdata
         if: ${{ failure() }} || true
         run: |
-          if [ -d "testcases" ]; then
+          if [ -d "testdata" ]; then
             echo "Fuzz tests have failed"
-            git add -f testcases
+            git config --global user.email laciferin@gmail.com
+            git config --global user.name GithubActions
+            git add -f testdata
             git commit -m "ci: fuzz tests failed on $date"
             git push
           else
@@ -124,14 +126,14 @@ jobs:
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
-          files: "testcases"
+          files: "testdata"
 
-      - name: Upload Artifacts
+      - name: Upload TestCases
         uses: actions/upload-artifact@v2
         if: steps.check_files.outputs.files_exists == 'true'
         with:
-          name: go-fuzz-testcases
-          path: ${{ github.workspace }}/testcases
+          name: go-fuzz-testdata
+          path: ${{ github.workspace }}/testdata
 
 
 
