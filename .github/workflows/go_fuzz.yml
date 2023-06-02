@@ -100,7 +100,7 @@ jobs:
 
 
   fuzz:
-    needs: [ build ] #will fail if more than 1 fuzz function is present
+    needs: [ build, fuzz-multiwrite ] #will fail if more than 1 fuzz function is present
     runs-on: ubuntu-latest
 
     steps:
