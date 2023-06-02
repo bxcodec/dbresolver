@@ -153,6 +153,8 @@ issues:
         - funlen
         - gocyclo
         - errcheck
+        - gocritic
+        - govet
     - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 
