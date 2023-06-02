@@ -17,10 +17,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+
+
 #TODO: minimize jobs with all having -race and then of course committing testdata/ or o/p testcases into log in case of failure
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  packages: none
 
 jobs:
   setup:
@@ -97,14 +106,6 @@ jobs:
 
       - name: Collect Testcases
         #        if:  ${{ failure() }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        permissions:
-          contents: write
-          pull-requests: write
-          issues: read
-          packages: none
         run: |
           if ${{ failure() }} || [ -d "testcases" ]; then
             echo "Fuzz tests have failed"
