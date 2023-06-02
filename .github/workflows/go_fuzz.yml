@@ -21,7 +21,6 @@ concurrency:
 env:
   GOCACHE: /tmp/go/gocache
   GOBIN: ${{ github.workspace }}/bin
-#  GITHUB_PATH: "$GITHUB_PATH:${{ github.workspace }}/bin"
 
 jobs:
   build:
@@ -59,9 +58,7 @@ jobs:
 
       - name: Install Test Deps
         run: |
-          go install github.com/mfridman/tparse@latest
-          go install gotest.tools/gotestsum@latest
-          tparse -h
+          go generate
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
