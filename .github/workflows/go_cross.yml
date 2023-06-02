@@ -36,15 +36,17 @@ jobs:
 
     timeout-minutes: 10
 
+    env:
+      GOCACHE: ${{matrix.gocache}}
+
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-          cache: 'go'
-          go-cache: ${{ matrix.gocache }}
           go-version-file: go.mod
           check-latest: true
 
