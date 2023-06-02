@@ -23,7 +23,7 @@ env:
   GOBIN: ${{ github.workspace }}/bin
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
     timeout-minutes: 3
 
@@ -55,7 +55,7 @@ jobs:
           go build -v
           echo "${{ env.GOBIN }}" >> $GITHUB_PATH
 
-      - name: Install Test Deps
+      - name: Go Generate
         run: |
           go generate
 
@@ -65,17 +65,18 @@ jobs:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
+      - name: Fuzz Short
+        run: |
+          go test -fuzz -fuzztime=20s -cover -covermode=count -run="Fuzz*" -json -short | \
+          tparse -follow -all -sort=elapsed 
+
 
   fuzz-multiwrite:
-    needs: [ build ]
+    needs: [ setup ]
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
-      #      - name: Setup upterm session
-      #        uses: lhotari/action-upterm@v1
-      #        timeout-minutes: 600
 
       - name: Download Artifacts
         uses: actions/download-artifact@v2
