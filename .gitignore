@@ -1,3 +1,8 @@
+# Macos
+
+.DS_Store
+
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -23,5 +28,4 @@ cover.txt
 
 
 # Created by go-fuzz
-testdata/
-.DS_Store
+#testdata/
