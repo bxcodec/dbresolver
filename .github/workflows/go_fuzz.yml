@@ -75,7 +75,7 @@ jobs:
 
   fuzz:
     needs: [ setup ]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,10 +95,10 @@ jobs:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
-      - name: Go Generate #Artifacts are not reliable
-        run: |
-          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
-          go generate
+      #      - name: Go Generate #Artifacts are not reliable
+      #        run: |
+      #          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
+      ##          go generate
 
       - run: chmod +x ${{ env.GOBIN }}/*
 
