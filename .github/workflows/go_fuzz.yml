@@ -57,6 +57,7 @@ jobs:
       - name: Go Generate
         run: |
           go generate
+          go generate fuzz.go
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -92,6 +93,9 @@ jobs:
         with:
           name: go-test-utils
           path: ${{ env.GOBIN }}
+
+      - name: Go Generate #Artifacts are not reliable
+        run: go generate
 
       - run: chmod +x ${{ env.GOBIN }}/*
 
