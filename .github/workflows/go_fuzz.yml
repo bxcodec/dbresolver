@@ -24,7 +24,7 @@ env:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 8
 
     steps:
@@ -130,6 +130,10 @@ jobs:
         with:
           name: go-fuzz-testdata
           path: ${{ github.workspace }}/testdata
+
+      - name: Fail Test
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: exit 1
 
 
 
