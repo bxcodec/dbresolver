@@ -131,6 +131,10 @@ jobs:
           name: go-fuzz-testdata
           path: ${{ github.workspace }}/testdata
 
+      - name: Fail Test
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: exit 1
+
 
 
 
