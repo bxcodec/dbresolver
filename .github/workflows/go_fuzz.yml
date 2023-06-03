@@ -25,7 +25,7 @@ env:
 
 jobs:
   setup:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 8
 
     steps:
@@ -74,7 +74,7 @@ jobs:
 
   fuzz:
     needs: [ setup ]
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,6 +88,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.20.4
+          check-latest: true
+
       #      - name: Download Artifacts
       #        uses: actions/download-artifact@v2
       #        with:
@@ -95,9 +101,8 @@ jobs:
       #          path: ${{ env.GOBIN }}
 
       - name: Go Generate #Artifacts are not reliable
-        run: |
-          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
-          go generate
+        continue-on-error: true
+        run: go generate
 
       - run: chmod +x ${{ env.GOBIN }}/*
 
