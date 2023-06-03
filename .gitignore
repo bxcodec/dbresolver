@@ -1,3 +1,6 @@
+# Macos
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -12,8 +15,15 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-vendor
+vendor/
 bin/
 coverage.txt
 oryxBuildBinary
-.idea
+.idea/
+.dist/
+
+cover.txt
+
+
+# Created by go-fuzz
+testdata/

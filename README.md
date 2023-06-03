@@ -139,6 +139,11 @@ func main() {
   - `ExecContext`
   - `Begin` (transaction will use primary)
   - `BeginTx`
+  - Queries with `"RETURNING"` clause
+    - `Query`
+    - `QueryContext`
+    - `QueryRow`
+    - `QueryRowContext`
 - Replica Databases will be used when you call these functions
   - `Query`
   - `QueryContext`
