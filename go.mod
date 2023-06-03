@@ -8,7 +8,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/lib/pq v1.10.7
-	go.uber.org/multierr v1.11.0
+	go.uber.org/multierr v1.8.0
 )
 
 require (
@@ -19,6 +19,7 @@ require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
