@@ -26,9 +26,9 @@ func Fuzz(data []byte) int {
 	fuzz.NewFromGoFuzz(data).Fuzz(&wdbCount)
 	fuzz.NewFromGoFuzz(data).Fuzz(&lbPolicyID)
 
-	if lbPolicyID > 2 { //release: update the no of lb policies
-		return 0
-	}
+	//if lbPolicyID > 2 { //release: update the no of lb policies
+	//	return 0
+	//}
 
 	primaries := make([]*sql.DB, wdbCount)
 	replicas := make([]*sql.DB, rdbCount)
