@@ -37,7 +37,6 @@ jobs:
           go-version: 1.20.4
           check-latest: true
           cache-dependency-path: go.sum
-          cache: true
 
       - name: Cache Go
         uses: actions/cache@v2
