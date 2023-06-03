@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '*'
+      - '**'
   pull_request:
     branches:
       - 'main'
@@ -24,7 +25,7 @@ env:
 
 jobs:
   setup:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 8
 
     steps:
@@ -36,7 +37,6 @@ jobs:
           go-version: 1.20.4
           check-latest: true
           cache-dependency-path: go.sum
-          cache: true
 
       - name: Cache Go
         uses: actions/cache@v2
@@ -57,6 +57,7 @@ jobs:
       - name: Go Generate
         run: |
           go generate
+      #          go generate fuzz.go
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -87,18 +88,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      #      - name: Set up Go
+      #        uses: actions/setup-go@v4
+      #        with:
+      #          go-version: 1.20.4
+      #          check-latest: true
+      #
+      #      - name: Go Generate #Artifacts are not reliable
+      #        continue-on-error: true
+      #        run: |
+      #          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
+      #          go generate
+
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
           name: go-test-utils
           path: ${{ env.GOBIN }}
 
+
+
       - run: chmod +x ${{ env.GOBIN }}/*
 
       - name: FuzzMultiWrite
         continue-on-error: true
         run: |
-          go test -json -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
+          go test -json -short -fuzztime=2m -timeout=15m -cover github.com/bxcodec/dbresolver/v2 -fuzz=FuzzMultiWrite -covermode=count -run ^$  | \
           bin/tparse -follow -all -sort=elapsed
 
       #          TODO: similarly write for every fuzz function
