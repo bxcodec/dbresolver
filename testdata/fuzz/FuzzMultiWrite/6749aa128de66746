@@ -1,0 +1,4 @@
+go test fuzz v1
+byte('Æ')
+byte('\x01')
+byte('\u0093')
