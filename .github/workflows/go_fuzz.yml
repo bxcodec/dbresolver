@@ -102,7 +102,9 @@ jobs:
 
       - name: Go Generate #Artifacts are not reliable
         continue-on-error: true
-        run: go generate
+        run: |
+          echo "${{ env.GOBIN }}" >> $GITHUB_PATH
+          go generate
 
       - run: chmod +x ${{ env.GOBIN }}/*
 
