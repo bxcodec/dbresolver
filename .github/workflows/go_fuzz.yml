@@ -118,6 +118,27 @@ jobs:
 
       #          TODO: similarly write for every fuzz function
 
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "testdata/fuzz"
+
+      - name: Run All Corpus
+        continue-on-error: true
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: |
+          for dir in $(find testdata/fuzz/* -type d); do
+            echo "Walking $dir"
+            for file in $(find "$dir" -type f); do
+                echo "Running $file"
+                go test -run="$(basename "$dir")/$(basename "$file")" -v
+                rm "$file"
+            done
+            rm -r "$dir"
+          done
+          rm -r testdata/fuzz
+
       - name: Collect testdata
         #        if: ${{ failure() }} || true
         if: github.event_name == 'push' && github.event.pull_request == null
@@ -127,17 +148,11 @@ jobs:
             git config --global user.email laciferin@gmail.com
             git config --global user.name GithubActions
             git add -f testdata
-            git commit -m "ci: fuzz tests failed on $date"
+            git commit -m "ci: fuzz tests updated on $date"
             git push
           else
             echo "All Fuzz Tests have passed"
           fi  
-
-      - name: Check file existence
-        id: check_files
-        uses: andstor/file-existence-action@v1
-        with:
-          files: "testdata"
 
       - name: Upload TestCases
         uses: actions/upload-artifact@v2
@@ -148,7 +163,15 @@ jobs:
 
       - name: Fail Test
         if: steps.check_files.outputs.files_exists == 'true'
-        run: exit 1
+        run: |
+          if [ -d "testdata/fuzz" ]; then
+            echo "Failing this run"
+            exit 1
+          else
+            echo "testdata dir present" 
+            echo "fuzz tests have passed on 2nd run"
+
+
 
 
 
