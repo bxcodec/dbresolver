@@ -22,7 +22,7 @@ func FuzzMultiWrite(f *testing.F) {
 		f.Add(wdbCount, rdbCount, lbPolicyID)
 	}()
 
-	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) {
+	f.Fuzz(func(t *testing.T, wdbCount, rdbCount, lbPolicyID uint8) { //next-release: uint8 -> uint
 
 		policyID := lbPolicyID % uint8(len(LoadBalancerPolicies))
 
