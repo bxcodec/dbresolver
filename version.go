@@ -1,16 +1,10 @@
 package dbresolver
 
 // Version is the current release version.
-func Version() string {
-	return ""
-}
+const Version = ""
 
 // Commit: is the HEAD commit of this [Version]
-func Commit() string {
-	return ""
-}
+const Commit = ""
 
 // ReleaseTime is the UTC Time of the release of this [Version]
-func ReleaseTime() string {
-	return ""
-}
+const ReleaseTime = ""
