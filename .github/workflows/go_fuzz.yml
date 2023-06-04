@@ -140,6 +140,7 @@ jobs:
           rm -r testdata/fuzz
 
       - name: Collect testdata
+        continue-on-error: true
         #        if: ${{ failure() }} || true
         if: github.event_name == 'push' && github.event.pull_request == null
         run: |
@@ -170,6 +171,7 @@ jobs:
           else
             echo "testdata dir present" 
             echo "fuzz tests have passed on 2nd run"
+          fi
 
 
 
