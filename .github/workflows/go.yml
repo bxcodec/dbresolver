@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           cache-dependency-path: go.sum
-          cache: true
           go-version-file: go.mod
           check-latest: true
 
