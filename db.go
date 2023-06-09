@@ -10,8 +10,6 @@ import (
 	"go.uber.org/multierr"
 )
 
-var backgroundCtx = context.Background() //reduces unnecessary cross library calls
-
 // DB interface is a contract that supported by this library.
 // All offered function of this library defined here.
 // This supposed to be aligned with sql.DB, but since some of the functions is not relevant
@@ -105,7 +103,7 @@ func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, err
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
 func (db *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.ExecContext(backgroundCtx, query, args...)
+	return db.ExecContext(context.Background(), query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
@@ -118,7 +116,7 @@ func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interfac
 // Ping verifies if a connection to each physical database is still alive,
 // establishing a connection if necessary.
 func (db *sqlDB) Ping() error {
-	return db.PingContext(backgroundCtx)
+	return db.PingContext(context.Background())
 }
 
 // PingContext verifies if a connection to each physical database is still
@@ -136,7 +134,7 @@ func (db *sqlDB) PingContext(ctx context.Context) error {
 // Prepare creates a prepared statement for later queries or executions
 // on each physical database, concurrently.
 func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
-	return db.PrepareContext(backgroundCtx, query)
+	return db.PrepareContext(context.Background(), query)
 }
 
 // PrepareContext creates a prepared statement for later queries or executions
@@ -180,7 +178,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
 func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return db.QueryContext(backgroundCtx, query, args...)
+	return db.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
@@ -207,7 +205,7 @@ func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interfa
 // QueryRow always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
 func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
-	return db.QueryRowContext(backgroundCtx, query, args...)
+	return db.QueryRowContext(context.Background(), query, args...)
 }
 
 // QueryRowContext executes a query that is expected to return at most one row.
