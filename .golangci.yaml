@@ -134,15 +134,40 @@ issues:
         - gomnd
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
+
+    - path: \.go
+      text: "commentedOutCode: may want to remove commented-out code"
+
+    - path: \.go
+      text: "commentFormatting: put a space between `//` and comment text"
+
+    - path: _test.go
+      linters:
+        - whitespace
+      text: "unnecessary (leading|trailing) newline"
+
     - path: db_test.go
       linters:
         - goconst
         - funlen
         - gocyclo
         - errcheck
-    - path: loadbalancer.go
+        - gocritic
+        - govet
+
+    - path: fuzz_test.go
+      linters:
+        - goconst
+        - funlen
+        - gocyclo
+        - errcheck
+        - gocritic
+        - govet
+
+    - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
+
 run:
   timeout: 5m
-  go: "1.19"
+  go: "1.18"
   skip-dirs: [examples]

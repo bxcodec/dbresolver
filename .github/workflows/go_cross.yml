@@ -1,0 +1,68 @@
+name: Cross Compatibility Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref}}
+  cancel-in-progress: true
+
+
+jobs:
+
+  build:
+    strategy:
+      matrix:
+        go-version: [ '1.18.x', '1.19.x', '1.20.x']
+        arch: [ x64, arm, arm64 ]
+        os: [ macos-latest, ubuntu-latest ] #windows-latest
+
+        include:
+          - os: ubuntu-latest
+            gocache: /tmp/go/gocache
+#          - os: windows-latest
+#            gocache: C:/gocache
+          - os: macos-latest
+            gocache: /tmp/go/gocache
+
+      fail-fast: true
+      max-parallel: 5
+
+    runs-on: ${{ matrix.os }}
+
+    timeout-minutes: 10
+
+    env:
+      GOCACHE: ${{matrix.gocache}}
+
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+
+      - name: Cache Go tests
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{env.GOCACHE}}
+          key: ${{ github.workflow }}-${{ runner.os }}-${{ matrix.arch }}-go-${{matrix.go-version}}-${{ hashFiles('**/go.mod','*_test.go') }}
+          restore-keys: |
+            ${{ github.workflow }}-${{ runner.os }}-${{ matrix.arch }}-go-${{matrix.go-version}}-${{ hashFiles('**/go.mod','*_test.go') }}
+
+
+      - name: Linter
+        continue-on-error: true
+        run: make lint-prepare && make lint
+
+      - name: Test
+        run: make test
