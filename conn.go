@@ -5,6 +5,8 @@ import (
 	"database/sql"
 )
 
+// Conn is a *sql.Conn wrapper.
+// Its main purpose is to be able to return the internal Tx and Stmt interfaces.
 type Conn interface {
 	Close() error
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 )
 
+// Tx is a *sql.Tx wrapper.
+// Its main purpose is to be able to return the internal Stmt interface.
 type Tx interface {
 	Commit() error
 	Rollback() error

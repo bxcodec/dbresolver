@@ -110,6 +110,9 @@ func (s *stmt) RWStmt() *sql.Stmt {
 	return s.loadBalancer.Resolve(s.primaryStmts)
 }
 
+// stmtForDB returns the corresponding *sql.Stmt instance for the given *sql.DB.
+// Ihis is needed because sql.Tx.Stmt() requires that the passed *sql.Stmt be from the same database
+// as the transaction.
 func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 	xsm, ok := s.dbStmt[db]
 	if ok {
@@ -128,7 +131,7 @@ func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 }
 
 // newSingleDBStmt creates a new stmt for a single DB connection.
-// This is used by transaction and connection-specific returned statements.
+// This is used by statements return by transaction and connections.
 func newSingleDBStmt(db *sqlDB, sourceDB *sql.DB, st *sql.Stmt) *stmt {
 	return &stmt{
 		db:           db,
