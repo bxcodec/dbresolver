@@ -116,7 +116,7 @@ func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 		return xsm
 	}
 
-	// return a random one so errors can be detected
+	// return any statement so errors can be detected
 	if len(s.primaryStmts) > 0 {
 		return s.primaryStmts[0]
 	}

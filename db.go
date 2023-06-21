@@ -49,8 +49,6 @@ type DBLoadBalancer LoadBalancer[*sql.DB]
 // StmtLoadBalancer is loadbalancer for query prepared statements
 type StmtLoadBalancer LoadBalancer[*sql.Stmt]
 
-// type StmtLoadBalancer LoadBalancer[*sql.Stmt]
-
 // sqlDB is a logical database with multiple underlying physical databases
 // forming a single ReadWrite (primary) with multiple ReadOnly(replicas) db.
 // Reads and writes are automatically directed to the correct db connection
