@@ -52,14 +52,7 @@ func (t *tx) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 		return nil, err
 	}
 
-	return &stmt{
-		db:           t.db,
-		loadBalancer: &RoundRobinLoadBalancer[*sql.Stmt]{},
-		primaryStmts: []*sql.Stmt{txstmt},
-		dbStmt: map[*sql.DB]*sql.Stmt{
-			t.sourceDB: txstmt,
-		},
-	}, nil
+	return newSingleDBStmt(t.db, t.sourceDB, txstmt), nil
 }
 
 func (t *tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
@@ -84,15 +77,7 @@ func (t *tx) Stmt(s Stmt) Stmt {
 
 func (t *tx) StmtContext(ctx context.Context, s Stmt) Stmt {
 	if rstmt, ok := s.(*stmt); ok {
-		tstmt := t.tx.StmtContext(ctx, rstmt.stmtForDB(t.sourceDB))
-		return &stmt{
-			db:           t.db,
-			loadBalancer: &RoundRobinLoadBalancer[*sql.Stmt]{},
-			primaryStmts: []*sql.Stmt{tstmt},
-			dbStmt: map[*sql.DB]*sql.Stmt{
-				t.sourceDB: tstmt,
-			},
-		}
+		return newSingleDBStmt(t.db, t.sourceDB, t.tx.StmtContext(ctx, rstmt.stmtForDB(t.sourceDB)))
 	}
 	return s
 }

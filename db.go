@@ -21,7 +21,7 @@ type DB interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
 	Close() error
 	// Conn only available for the primary db or the first primary db (if using multi-primary)
-	Conn(ctx context.Context) (*sql.Conn, error)
+	Conn(ctx context.Context) (Conn, error)
 	Driver() driver.Driver
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -322,8 +322,17 @@ func (db *sqlDB) ReadWrite() *sql.DB {
 
 // Conn returns a single connection by either opening a new connection or returning an existing connection from the
 // connection pool of the first primary db.
-func (db *sqlDB) Conn(ctx context.Context) (*sql.Conn, error) {
-	return db.primaries[0].Conn(ctx)
+func (db *sqlDB) Conn(ctx context.Context) (Conn, error) {
+	c, err := db.primaries[0].Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &conn{
+		db:       db,
+		sourceDB: db.primaries[0],
+		conn:     c,
+	}, nil
 }
 
 // Stats returns database statistics for the first primary db

@@ -126,3 +126,16 @@ func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 
 	panic("should have at least one statement") // should not happen
 }
+
+// newSingleDBStmt creates a new stmt for a single DB connection.
+// This is used by transaction and connection-specific returned statements.
+func newSingleDBStmt(db *sqlDB, sourceDB *sql.DB, st *sql.Stmt) *stmt {
+	return &stmt{
+		db:           db,
+		loadBalancer: &RoundRobinLoadBalancer[*sql.Stmt]{},
+		primaryStmts: []*sql.Stmt{st},
+		dbStmt: map[*sql.DB]*sql.Stmt{
+			sourceDB: st,
+		},
+	}
+}
