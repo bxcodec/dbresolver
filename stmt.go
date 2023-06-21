@@ -24,6 +24,7 @@ type stmt struct {
 	loadBalancer StmtLoadBalancer
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
+	dbStmt       map[*sql.DB]*sql.Stmt
 }
 
 // Close closes the statement by concurrently closing all underlying
@@ -107,4 +108,21 @@ func (s *stmt) ROStmt() *sql.Stmt {
 // RWStmt return the primary statement
 func (s *stmt) RWStmt() *sql.Stmt {
 	return s.loadBalancer.Resolve(s.primaryStmts)
+}
+
+func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
+	xsm, ok := s.dbStmt[db]
+	if ok {
+		return xsm
+	}
+
+	// return a random one so errors can be detected
+	if len(s.primaryStmts) > 0 {
+		return s.primaryStmts[0]
+	}
+	if len(s.replicaStmts) > 0 {
+		return s.replicaStmts[0]
+	}
+
+	panic("should have at least one statement") // should not happen
 }

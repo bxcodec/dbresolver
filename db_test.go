@@ -201,6 +201,52 @@ func testMW(t *testing.T, config DBConfig) {
 		stmt.Exec()
 	})
 
+	t.Run("prepare tx", func(t *testing.T) {
+		query := "select 1"
+
+		for _, mock := range mockPimaries {
+			mock.ExpectPrepare(query)
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("sqlmock:unmet expectations: %s", err)
+				}
+			}(mock)
+		}
+		for _, mock := range mockReplicas {
+			mock.ExpectPrepare(query)
+			defer func(mock sqlmock.Sqlmock) {
+				if err := mock.ExpectationsWereMet(); err != nil {
+					t.Errorf("sqlmock:unmet expectations: %s", err)
+				}
+			}(mock)
+		}
+
+		stmt, err := resolver.Prepare(query)
+		if err != nil {
+			t.Error("prepare failed")
+			return
+		}
+
+		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
+		mock := mockPimaries[robin]
+
+		mock.ExpectBegin()
+
+		tx, err := resolver.Begin()
+		if err != nil {
+			t.Error("begin failed", err)
+			return
+		}
+
+		txstmt := tx.Stmt(stmt)
+
+		mock.ExpectExec(query)
+		txstmt.Exec()
+
+		mock.ExpectCommit()
+		tx.Commit()
+	})
+
 	t.Run("ping", func(t *testing.T) {
 		for _, mock := range mockPimaries {
 			mock.ExpectPing()
