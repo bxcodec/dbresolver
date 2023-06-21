@@ -227,7 +227,7 @@ func testMW(t *testing.T, config DBConfig) {
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
+		robin := resolver.loadBalancer.predict(noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectBegin()
@@ -240,8 +240,12 @@ func testMW(t *testing.T, config DBConfig) {
 
 		txstmt := tx.Stmt(stmt)
 
-		mock.ExpectExec(query)
-		txstmt.Exec()
+		mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0))
+		_, err = txstmt.Exec()
+		if err != nil {
+			t.Error("stmt exec failed", err)
+			return
+		}
 
 		mock.ExpectCommit()
 		tx.Commit()
