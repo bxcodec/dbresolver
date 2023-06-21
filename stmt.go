@@ -118,15 +118,8 @@ func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 		return xsm
 	}
 
-	// return any statement so errors can be detected
-	if len(s.primaryStmts) > 0 {
-		return s.primaryStmts[0]
-	}
-	if len(s.replicaStmts) > 0 {
-		return s.replicaStmts[0]
-	}
-
-	panic("should have at least one statement") // should not happen
+	// return any statement so errors can be detected by Tx.Stmt()
+	return s.RWStmt()
 }
 
 // newSingleDBStmt creates a new stmt for a single DB connection.
