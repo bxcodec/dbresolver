@@ -15,7 +15,7 @@ type Conn interface {
 	PrepareContext(ctx context.Context, query string) (Stmt, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	Raw(f func(driverConn any) error) (err error)
+	Raw(f func(driverConn interface{}) error) (err error)
 }
 
 type conn struct {
@@ -64,6 +64,6 @@ func (c *conn) QueryRowContext(ctx context.Context, query string, args ...interf
 	return c.conn.QueryRowContext(ctx, query, args...)
 }
 
-func (c *conn) Raw(f func(driverConn any) error) (err error) {
+func (c *conn) Raw(f func(driverConn interface{}) error) (err error) {
 	return c.conn.Raw(f)
 }
