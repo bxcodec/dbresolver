@@ -20,7 +20,6 @@ type Stmt interface {
 }
 
 type stmt struct {
-	db           *sqlDB
 	loadBalancer StmtLoadBalancer
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
@@ -132,9 +131,8 @@ func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
 
 // newSingleDBStmt creates a new stmt for a single DB connection.
 // This is used by statements return by transaction and connections.
-func newSingleDBStmt(db *sqlDB, sourceDB *sql.DB, st *sql.Stmt) *stmt {
+func newSingleDBStmt(sourceDB *sql.DB, st *sql.Stmt) *stmt {
 	return &stmt{
-		db:           db,
 		loadBalancer: &RoundRobinLoadBalancer[*sql.Stmt]{},
 		primaryStmts: []*sql.Stmt{st},
 		dbStmt: map[*sql.DB]*sql.Stmt{

@@ -19,7 +19,6 @@ type Conn interface {
 }
 
 type conn struct {
-	db       *sqlDB
 	sourceDB *sql.DB
 	conn     *sql.Conn
 }
@@ -35,7 +34,6 @@ func (c *conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 	}
 
 	return &tx{
-		db:       c.db,
 		sourceDB: c.sourceDB,
 		tx:       stx,
 	}, nil
@@ -55,7 +53,7 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 		return nil, err
 	}
 
-	return newSingleDBStmt(c.db, c.sourceDB, pstmt), nil
+	return newSingleDBStmt(c.sourceDB, pstmt), nil
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {

@@ -105,7 +105,6 @@ func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 	}
 
 	return &tx{
-		db:       db,
 		sourceDB: sourceDB,
 		tx:       stx,
 	}, nil
@@ -188,7 +187,6 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 	}
 
 	_stmt = &stmt{
-		db:           db,
 		loadBalancer: db.stmtLoadBalancer,
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
@@ -329,7 +327,6 @@ func (db *sqlDB) Conn(ctx context.Context) (Conn, error) {
 	}
 
 	return &conn{
-		db:       db,
 		sourceDB: db.primaries[0],
 		conn:     c,
 	}, nil
