@@ -9,7 +9,7 @@ import (
 
 // DBConnection is the generic type for DB and Stmt operation
 type DBConnection interface {
-	*sql.DB | *sql.Stmt | *sql.Conn
+	*sql.DB | *sql.Stmt
 }
 
 // LoadBalancer define the load balancer contract
