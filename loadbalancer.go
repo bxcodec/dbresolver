@@ -19,18 +19,22 @@ type LoadBalancer[T DBConnection] interface {
 	predict(n int) int
 }
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 // RandomLoadBalancer represent for Random LB policy
 type RandomLoadBalancer[T DBConnection] struct {
 	randInt chan int
 }
 
 // RandomLoadBalancer return the LB policy name
-func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
+func (lb *RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RandomLB
 }
 
 // Resolve return the resolved option for Random LB
-func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
+func (lb *RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if len(lb.randInt) == 0 {
 		lb.predict(len(dbs))
 	}
@@ -39,8 +43,7 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	return dbs[randomInt]
 }
 
-func (lb RandomLoadBalancer[T]) predict(n int) int {
-	rand.Seed(time.Now().UnixNano())
+func (lb *RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
