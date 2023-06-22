@@ -74,7 +74,6 @@ func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
 	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
 
-// nolint
 func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	if n <= 1 {
 		return 0

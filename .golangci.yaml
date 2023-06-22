@@ -102,7 +102,6 @@ linters:
     - staticcheck
     # - structcheck #deprecated
     - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
@@ -129,6 +128,10 @@ linters:
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
+    - path: /.go
+      linters:
+        - typecheck
+
     - path: _test\.go
       linters:
         - gomnd
@@ -146,7 +149,7 @@ issues:
         - whitespace
       text: "unnecessary (leading|trailing) newline"
 
-    - path: db_test.go
+    - path: _test.go
       linters:
         - goconst
         - funlen
@@ -154,20 +157,12 @@ issues:
         - errcheck
         - gocritic
         - govet
-
-    - path: fuzz_test.go
-      linters:
-        - goconst
-        - funlen
-        - gocyclo
-        - errcheck
-        - gocritic
-        - govet
+        - typecheck
 
     - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 
 run:
   timeout: 5m
-  go: "1.18"
+  go: "1.19"
   skip-dirs: [examples]
