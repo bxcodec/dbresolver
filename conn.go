@@ -3,6 +3,7 @@ package dbresolver
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 // Conn is a *sql.Conn wrapper.
@@ -53,7 +54,10 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 		return nil, err
 	}
 
-	return newSingleDBStmt(c.sourceDB, pstmt), nil
+	_query := strings.ToUpper(query)
+	writeFlag := strings.Contains(_query, "RETURNING")
+
+	return newSingleDBStmt(c.sourceDB, pstmt, writeFlag), nil
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {

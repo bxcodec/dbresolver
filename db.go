@@ -186,11 +186,15 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 		return
 	}
 
+	_query := strings.ToUpper(query)
+	writeFlag := strings.Contains(_query, "RETURNING")
+
 	_stmt = &stmt{
 		loadBalancer: db.stmtLoadBalancer,
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
 		dbStmt:       dbStmt,
+		writeFlag:    writeFlag,
 	}
 	return _stmt, nil
 }

@@ -53,7 +53,7 @@ func (t *tx) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 		return nil, err
 	}
 
-	return newSingleDBStmt(t.sourceDB, txstmt), nil
+	return newSingleDBStmt(t.sourceDB, txstmt, true), nil
 }
 
 func (t *tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
@@ -78,7 +78,7 @@ func (t *tx) Stmt(s Stmt) Stmt {
 
 func (t *tx) StmtContext(ctx context.Context, s Stmt) Stmt {
 	if rstmt, ok := s.(*stmt); ok {
-		return newSingleDBStmt(t.sourceDB, t.tx.StmtContext(ctx, rstmt.stmtForDB(t.sourceDB)))
+		return newSingleDBStmt(t.sourceDB, t.tx.StmtContext(ctx, rstmt.stmtForDB(t.sourceDB)), true)
 	}
 	return s
 }
