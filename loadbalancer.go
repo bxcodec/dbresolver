@@ -9,7 +9,7 @@ import (
 
 // DBConnection is the generic type for DB and Stmt operation
 type DBConnection interface {
-	*sql.DB | *sql.Stmt
+	*sql.DB | *sql.Stmt | *sql.Conn
 }
 
 // LoadBalancer define the load balancer contract
@@ -54,7 +54,7 @@ type RoundRobinLoadBalancer[T DBConnection] struct {
 }
 
 // RandomLoadBalancer return the LB policy name
-func (lb RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
+func (lb *RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RoundRobinLB
 }
 
@@ -71,7 +71,7 @@ func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
 	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
 
-//nolint
+// nolint
 func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	if n <= 1 {
 		return 0
