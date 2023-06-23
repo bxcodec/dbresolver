@@ -16,10 +16,11 @@ const (
 
 // Option define the option property
 type Option struct {
-	PrimaryDBs []*sql.DB
-	ReplicaDBs []*sql.DB
-	StmtLB     StmtLoadBalancer
-	DBLB       DBLoadBalancer
+	PrimaryDBs       []*sql.DB
+	ReplicaDBs       []*sql.DB
+	StmtLB           StmtLoadBalancer
+	DBLB             DBLoadBalancer
+	QueryTypeChecker QueryTypeChecker
 }
 
 // OptionFunc used for option chaining
@@ -36,6 +37,14 @@ func WithPrimaryDBs(primaryDBs ...*sql.DB) OptionFunc {
 func WithReplicaDBs(replicaDBs ...*sql.DB) OptionFunc {
 	return func(opt *Option) {
 		opt.ReplicaDBs = replicaDBs
+	}
+}
+
+// WithQueryTypeChecker sets the query type checker instance.
+// The default one just checks for the presence of the string "RETURNING" in the uppercase query.
+func WithQueryTypeChecker(checker QueryTypeChecker) OptionFunc {
+	return func(opt *Option) {
+		opt.QueryTypeChecker = checker
 	}
 }
 
@@ -61,7 +70,8 @@ func WithLoadBalancer(lb LoadBalancerPolicy) OptionFunc {
 
 func defaultOption() *Option {
 	return &Option{
-		DBLB:   &RoundRobinLoadBalancer[*sql.DB]{},
-		StmtLB: &RoundRobinLoadBalancer[*sql.Stmt]{},
+		DBLB:             &RoundRobinLoadBalancer[*sql.DB]{},
+		StmtLB:           &RoundRobinLoadBalancer[*sql.Stmt]{},
+		QueryTypeChecker: &DefaultQueryTypeChecker{},
 	}
 }
