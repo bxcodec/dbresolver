@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"strings"
 	"time"
 
 	"go.uber.org/multierr"
@@ -57,6 +56,7 @@ type sqlDB struct {
 	replicas         []*sql.DB
 	loadBalancer     DBLoadBalancer
 	stmtLoadBalancer StmtLoadBalancer
+	queryTypeChecker QueryTypeChecker
 }
 
 // PrimaryDBs return all the active primary DB
@@ -185,8 +185,7 @@ func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 // The args are for any placeholder parameters in the query.
 func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
 	var curDB *sql.DB
-	_query := strings.ToUpper(query)
-	writeFlag := strings.Contains(_query, "RETURNING")
+	writeFlag := db.queryTypeChecker.Check(query) == QueryTypeWrite
 
 	if writeFlag {
 		curDB = db.ReadWrite()
@@ -213,8 +212,7 @@ func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
 // Errors are deferred until Row's Scan method is called.
 func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	var curDB *sql.DB
-	_query := strings.ToUpper(query)
-	writeFlag := strings.Contains(_query, "RETURNING")
+	writeFlag := db.queryTypeChecker.Check(query) == QueryTypeWrite
 
 	if writeFlag {
 		curDB = db.ReadWrite()

@@ -16,5 +16,6 @@ func New(opts ...OptionFunc) DB {
 		replicas:         opt.ReplicaDBs,
 		loadBalancer:     opt.DBLB,
 		stmtLoadBalancer: opt.StmtLB,
+		queryTypeChecker: opt.QueryTypeChecker,
 	}
 }
