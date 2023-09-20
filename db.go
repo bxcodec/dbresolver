@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/multierr"
@@ -15,11 +17,11 @@ import (
 // with multi dbs connection, we decided to forward all single connection DB related function to the first primary DB
 // For example, function like, `Conn()“, or `Stats()` only available for the primary DB, or the first primary DB (if using multi-primary)
 type DB interface {
-	Begin() (*sql.Tx, error)
-	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+	Begin() (Tx, error)
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
 	Close() error
 	// Conn only available for the primary db or the first primary db (if using multi-primary)
-	Conn(ctx context.Context) (*sql.Conn, error)
+	Conn(ctx context.Context) (Conn, error)
 	Driver() driver.Driver
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
@@ -86,8 +88,8 @@ func (db *sqlDB) Driver() driver.Driver {
 }
 
 // Begin starts a transaction on the RW-db. The isolation level is dependent on the driver.
-func (db *sqlDB) Begin() (*sql.Tx, error) {
-	return db.ReadWrite().Begin()
+func (db *sqlDB) Begin() (Tx, error) {
+	return db.BeginTx(context.Background(), nil)
 }
 
 // BeginTx starts a transaction with the provided context on the RW-db.
@@ -95,8 +97,18 @@ func (db *sqlDB) Begin() (*sql.Tx, error) {
 // The provided TxOptions is optional and may be nil if defaults should be used.
 // If a non-default isolation level is used that the driver doesn't support,
 // an error will be returned.
-func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
-	return db.ReadWrite().BeginTx(ctx, opts)
+func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
+	sourceDB := db.ReadWrite()
+
+	stx, err := sourceDB.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tx{
+		sourceDB: sourceDB,
+		tx:       stx,
+	}, nil
 }
 
 // Exec executes a query without returning any rows.
@@ -143,15 +155,24 @@ func (db *sqlDB) Prepare(query string) (_stmt Stmt, err error) {
 // The provided context is used for the preparation of the statement, not for
 // the execution of the statement.
 func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, err error) {
+	dbStmt := map[*sql.DB]*sql.Stmt{}
+	var dbStmtLock sync.Mutex
 	roStmts := make([]*sql.Stmt, len(db.replicas))
 	primaryStmts := make([]*sql.Stmt, len(db.primaries))
 	errPrimaries := doParallely(len(db.primaries), func(i int) (err error) {
 		primaryStmts[i], err = db.primaries[i].PrepareContext(ctx, query)
+		dbStmtLock.Lock()
+		dbStmt[db.primaries[i]] = primaryStmts[i]
+		dbStmtLock.Unlock()
 		return
 	})
 
 	errReplicas := doParallely(len(db.replicas), func(i int) (err error) {
 		roStmts[i], err = db.replicas[i].PrepareContext(ctx, query)
+		dbStmtLock.Lock()
+		dbStmt[db.replicas[i]] = roStmts[i]
+		dbStmtLock.Unlock()
+
 		// if connection error happens on RO connection,
 		// ignore and fallback to RW connection
 		if isDBConnectionError(err) {
@@ -166,11 +187,15 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 		return
 	}
 
+	_query := strings.ToUpper(query)
+	writeFlag := strings.Contains(_query, "RETURNING")
+
 	_stmt = &stmt{
-		db:           db,
 		loadBalancer: db.stmtLoadBalancer,
 		primaryStmts: primaryStmts,
 		replicaStmts: roStmts,
+		dbStmt:       dbStmt,
+		writeFlag:    writeFlag,
 	}
 	return _stmt, nil
 }
@@ -298,8 +323,16 @@ func (db *sqlDB) ReadWrite() *sql.DB {
 
 // Conn returns a single connection by either opening a new connection or returning an existing connection from the
 // connection pool of the first primary db.
-func (db *sqlDB) Conn(ctx context.Context) (*sql.Conn, error) {
-	return db.primaries[0].Conn(ctx)
+func (db *sqlDB) Conn(ctx context.Context) (Conn, error) {
+	c, err := db.primaries[0].Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &conn{
+		sourceDB: db.primaries[0],
+		conn:     c,
+	}, nil
 }
 
 // Stats returns database statistics for the first primary db

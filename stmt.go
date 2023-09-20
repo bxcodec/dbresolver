@@ -20,10 +20,11 @@ type Stmt interface {
 }
 
 type stmt struct {
-	db           *sqlDB
 	loadBalancer StmtLoadBalancer
 	primaryStmts []*sql.Stmt
 	replicaStmts []*sql.Stmt
+	writeFlag    bool
+	dbStmt       map[*sql.DB]*sql.Stmt
 }
 
 // Close closes the statement by concurrently closing all underlying
@@ -64,8 +65,15 @@ func (s *stmt) Query(args ...interface{}) (*sql.Rows, error) {
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
 func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-	rows, err := s.ROStmt().QueryContext(ctx, args...)
-	if isDBConnectionError(err) {
+	var curStmt *sql.Stmt
+	if s.writeFlag {
+		curStmt = s.RWStmt()
+	} else {
+		curStmt = s.ROStmt()
+	}
+
+	rows, err := curStmt.QueryContext(ctx, args...)
+	if isDBConnectionError(err) && !s.writeFlag {
 		rows, err = s.RWStmt().QueryContext(ctx, args...)
 	}
 	return rows, err
@@ -88,8 +96,15 @@ func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRowContext uses the read only DB as the underlying physical db.
 func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	row := s.ROStmt().QueryRowContext(ctx, args...)
-	if isDBConnectionError(row.Err()) {
+	var curStmt *sql.Stmt
+	if s.writeFlag {
+		curStmt = s.RWStmt()
+	} else {
+		curStmt = s.ROStmt()
+	}
+
+	row := curStmt.QueryRowContext(ctx, args...)
+	if isDBConnectionError(row.Err()) && !s.writeFlag {
 		row = s.RWStmt().QueryRowContext(ctx, args...)
 	}
 	return row
@@ -107,4 +122,30 @@ func (s *stmt) ROStmt() *sql.Stmt {
 // RWStmt return the primary statement
 func (s *stmt) RWStmt() *sql.Stmt {
 	return s.loadBalancer.Resolve(s.primaryStmts)
+}
+
+// stmtForDB returns the corresponding *sql.Stmt instance for the given *sql.DB.
+// Ihis is needed because sql.Tx.Stmt() requires that the passed *sql.Stmt be from the same database
+// as the transaction.
+func (s *stmt) stmtForDB(db *sql.DB) *sql.Stmt {
+	xsm, ok := s.dbStmt[db]
+	if ok {
+		return xsm
+	}
+
+	// return any statement so errors can be detected by Tx.Stmt()
+	return s.RWStmt()
+}
+
+// newSingleDBStmt creates a new stmt for a single DB connection.
+// This is used by statements return by transaction and connections.
+func newSingleDBStmt(sourceDB *sql.DB, st *sql.Stmt, writeFlag bool) *stmt {
+	return &stmt{
+		loadBalancer: &RoundRobinLoadBalancer[*sql.Stmt]{},
+		primaryStmts: []*sql.Stmt{st},
+		dbStmt: map[*sql.DB]*sql.Stmt{
+			sourceDB: st,
+		},
+		writeFlag: writeFlag,
+	}
 }
