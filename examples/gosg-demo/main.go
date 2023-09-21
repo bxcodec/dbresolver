@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/bxcodec/dbresolver/v2"
@@ -78,21 +78,27 @@ func main() {
 		fmt.Println("Queried Articles Without Prepare ", res)
 
 		id := c.QueryParam("id")
-		singleArticle := queryRow(connectionDB, id)
-		fmt.Println("Queried Single Article: ", singleArticle)
+		idInt, err := strconv.ParseInt(id, 10, 64)
+		if id != "" && err != nil {
+			return c.String(http.StatusBadRequest, "invalid id")
+		}
+		if idInt > 0 {
+			singleArticle := queryRow(connectionDB, idInt)
+			fmt.Println("Queried Single Article: ", singleArticle)
 
-		singleArticlePrepared := queryRowPrepare(connectionDB, id)
-		fmt.Println("Queried Single Article: ", singleArticlePrepared)
+			singleArticlePrepared := queryRowPrepare(connectionDB, idInt)
+			fmt.Println("Queried Single Article: ", singleArticlePrepared)
 
-		singleArticlePreparedStmt := queryRowPreparedStmt(stmt, id)
-		fmt.Println("Queried Single Article with Prepared Stmt: ", singleArticlePreparedStmt)
+			singleArticlePreparedStmt := queryRowPreparedStmt(stmt, idInt)
+			fmt.Println("Queried Single Article with Prepared Stmt: ", singleArticlePreparedStmt)
+		}
 
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
-func insertMasterData(db dbresolver.DB) []string {
+func insertMasterData(db dbresolver.DB) []int64 {
 	articles := []Article{
 		{
 			Title:   "Lorem Ipsum",
@@ -113,7 +119,7 @@ func insertMasterData(db dbresolver.DB) []string {
 		log.Fatal("failed to insert master data ", err)
 	}
 	defer stmt.Close()
-	articleIds := []string{}
+	articleIds := []int64{}
 	for index, article := range articles {
 
 		row := stmt.QueryRow(article.Title, article.Content, time.Now())
@@ -122,22 +128,24 @@ func insertMasterData(db dbresolver.DB) []string {
 		if err != nil {
 			log.Println("failed to insert new article, ", err)
 		}
-		idStr := fmt.Sprintf("%d", id)
-		articleIds = append(articleIds, idStr)
-		articles[index].ID = idStr
+		articleIds = append(articleIds, id)
+		articles[index].ID = id
 	}
 	tx.Commit()
 	fmt.Println("Inserted Articles ", articles)
 	return articleIds
 }
 
-func queryArticles(db dbresolver.DB, articleIDs []string) []Article {
-	stmt, err := db.Prepare("SELECT article_id, title, content FROM articles WHERE article_id IN($1)")
+func queryArticles(db dbresolver.DB, articleIDs []int64) []Article {
+	sql, args, _ := squirrel.Select("article_id", "title", "content").
+		From("articles").PlaceholderFormat(squirrel.Dollar).
+		Where(squirrel.Eq{"article_id": articleIDs}).ToSql()
+	stmt, err := db.Prepare(sql)
 	if err != nil {
 		log.Print("failed to prepare the query", err)
 	}
 	defer stmt.Close()
-	rows, err := stmt.Query(strings.Join(articleIDs, ","))
+	rows, err := stmt.Query(args...)
 	if err != nil {
 		log.Print("failed to query using IDs", err)
 	}
@@ -148,16 +156,16 @@ func queryArticles(db dbresolver.DB, articleIDs []string) []Article {
 		var articleID int64
 		errScan := rows.Scan(&articleID, &article.Title, &article.Content)
 		if errScan != nil {
-			log.Print("failed to scan rows, ", errScan)
+			log.Print("failed to scan rows 1, ", errScan)
 		}
 
-		article.ID = fmt.Sprintf("%d", articleID)
+		article.ID = articleID
 		res = append(res, article)
 	}
 	return res
 }
 
-func queryRowPrepare(db dbresolver.DB, articleID string) Article {
+func queryRowPrepare(db dbresolver.DB, articleID int64) Article {
 	stmt, err := db.Prepare("SELECT article_id, title, content FROM articles WHERE article_id = $1")
 	if err != nil {
 		log.Print("failed to prepare the query", err)
@@ -166,27 +174,27 @@ func queryRowPrepare(db dbresolver.DB, articleID string) Article {
 	row := stmt.QueryRow(articleID)
 	var article Article
 	var dbArticleID int64
-	errScan := row.Scan(&articleID, &article.Title, &article.Content)
+	errScan := row.Scan(&dbArticleID, &article.Title, &article.Content)
 	if errScan != nil {
-		log.Print("failed to scan rows, ", errScan)
+		log.Print("failed to scan rows 2, ", errScan)
 	}
-	article.ID = fmt.Sprintf("%d", dbArticleID)
+	article.ID = dbArticleID
 	return article
 }
 
-func queryRowPreparedStmt(stmt dbresolver.Stmt, articleID string) Article {
+func queryRowPreparedStmt(stmt dbresolver.Stmt, articleID int64) Article {
 	row := stmt.QueryRow(articleID)
 	var article Article
 	var dbArticleID int64
 	errScan := row.Scan(&articleID, &article.Title, &article.Content)
 	if errScan != nil {
-		log.Print("failed to scan rows, ", errScan)
+		log.Print("failed to scan rows 3, ", errScan)
 	}
-	article.ID = fmt.Sprintf("%d", dbArticleID)
+	article.ID = dbArticleID
 	return article
 }
 
-func queryRow(db dbresolver.DB, articleID string) Article {
+func queryRow(db dbresolver.DB, articleID int64) Article {
 	sql, args, err := squirrel.Select("article_id", "title", "content").
 		From("articles").PlaceholderFormat(squirrel.Dollar).
 		Where(squirrel.Eq{"article_id": articleID}).ToSql()
@@ -197,15 +205,15 @@ func queryRow(db dbresolver.DB, articleID string) Article {
 
 	var article Article
 	var dbArticleID int64
-	errScan := row.Scan(&articleID, &article.Title, &article.Content)
+	errScan := row.Scan(&dbArticleID, &article.Title, &article.Content)
 	if errScan != nil {
-		log.Print("failed to scan rows, ", errScan)
+		log.Print("failed to scan rows 4, ", errScan)
 	}
-	article.ID = fmt.Sprintf("%d", dbArticleID)
+	article.ID = dbArticleID
 	return article
 }
 
-func queryArticlesWithoutPrepare(db dbresolver.DB, articleIDs []string) []Article {
+func queryArticlesWithoutPrepare(db dbresolver.DB, articleIDs []int64) []Article {
 	sql, args, err := squirrel.Select("article_id", "title", "content").
 		From("articles").PlaceholderFormat(squirrel.Dollar).
 		Where(squirrel.Eq{"article_id": articleIDs}).ToSql()
@@ -222,17 +230,17 @@ func queryArticlesWithoutPrepare(db dbresolver.DB, articleIDs []string) []Articl
 		var articleID int64
 		errScan := rows.Scan(&articleID, &article.Title, &article.Content)
 		if errScan != nil {
-			log.Print("failed to scan rows, ", errScan)
+			log.Print("failed to scan rows 5, ", errScan)
 		}
 
-		article.ID = fmt.Sprintf("%d", articleID)
+		article.ID = articleID
 		res = append(res, article)
 	}
 	return res
 }
 
 type Article struct {
-	ID          string
+	ID          int64
 	Title       string
 	Content     string
 	CreatedTime string
