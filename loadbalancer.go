@@ -30,7 +30,7 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 }
 
 // Resolve return the resolved option for Random LB.
-// Cannot be preempted
+// Marked with go:nosplit to prevent inlining.
 //
 //go:nosplit
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
