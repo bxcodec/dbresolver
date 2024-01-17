@@ -31,10 +31,10 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	for len(lb.randInt) == 0 {
-		lb.predict(len(dbs))
-	}
-	randomInt := <-lb.randInt
+	defer func() {
+		<-lb.randInt
+	}()
+	randomInt := lb.predict(len(dbs))
 	return dbs[randomInt]
 }
 
@@ -70,11 +70,11 @@ func (lb *RoundRobinLoadBalancer[T]) roundRobin(n int) int {
 	return int(atomic.AddUint64(&lb.counter, 1) % uint64(n))
 }
 
-//nolint
+// nolint
 func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	if n <= 1 {
 		return 0
 	}
 	counter := lb.counter
-	return int(atomic.AddUint64(&counter, 1) % uint64(n)
+	return int(atomic.AddUint64(&counter, 1) % uint64(n))
 }
