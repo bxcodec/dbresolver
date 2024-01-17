@@ -37,7 +37,6 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if len(lb.randInt) == 0 {
 		lb.predict(len(dbs))
 	}
-
 	randomInt := <-lb.randInt
 	return dbs[randomInt]
 }
