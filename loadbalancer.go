@@ -30,9 +30,9 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 }
 
 // Resolve return the resolved option for Random LB.
-// Marked with go:nosplit to prevent inlining.
+// Marked with go:noinline to prevent inlining.
 //
-//go:nosplit
+//go:noinline
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	if len(lb.randInt) == 0 {
 		lb.predict(len(dbs))
