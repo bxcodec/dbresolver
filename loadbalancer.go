@@ -55,7 +55,7 @@ type RoundRobinLoadBalancer[T DBConnection] struct {
 	counter uint64 // Monotonically incrementing counter on every call
 }
 
-// RandomLoadBalancer return the LB policy name
+// Name return the LB policy name
 func (lb RoundRobinLoadBalancer[T]) Name() LoadBalancerPolicy {
 	return RoundRobinLB
 }
