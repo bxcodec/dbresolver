@@ -31,10 +31,10 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	defer func() {
-		<-lb.randInt
-	}()
-	randomInt := lb.predict(len(dbs))
+	for len(lb.randInt) == 0 {
+		lb.predict(len(dbs))
+	}
+	randomInt := <-lb.randInt
 	return dbs[randomInt]
 }
 
