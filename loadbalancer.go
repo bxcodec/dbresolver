@@ -33,11 +33,12 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 //
 //go:nosplit
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
+	if len(lb.randInt) == 0 {
+		lb.predict(len(dbs))
+	}
 	select {
 	case randomIt := <-lb.randInt:
 		return dbs[randomIt]
-	case lb.randInt <- lb.predict(len(dbs)):
-		return dbs[<-lb.randInt]
 	}
 }
 
