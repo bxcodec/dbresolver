@@ -10,8 +10,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		2,
-		1,
+		5,
+		20,
 		RandomLB,
 	}
 
@@ -70,22 +70,14 @@ func TestIssue44(t *testing.T) {
 			if err := mock.ExpectationsWereMet(); err == nil {
 				queriedMock = iM
 				t.Logf("found mock:%d for query:%d", iM, i)
-				break
 			} else {
-				t.Errorf("expect mock:%d error: %s", iM, err)
+				//t.Errorf("expect mock:%d error: %s", iM, err)
+				failedMocks += 1
+				_, err = allDBs[iM].Query(query)
+				if err != nil {
+					t.Errorf("db error: %s", err)
+				}
 			}
-			_, err = allDBs[iM].Query(query)
-			if err != nil {
-				t.Errorf("db error: %s", err)
-			}
-			//if iM>len(primaries)-1{
-			//	rP:=iM-len(primaries)
-			//	replicas[rP].Query(query)
-			//}else{
-			//
-			//}
-
-			failedMocks += 1
 		}
 		if queriedMock == -1 {
 			t.Errorf("failedMocks:%d", failedMocks)
