@@ -10,8 +10,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		10,
-		10,
+		1,
+		1,
 		RandomLB,
 	}
 
@@ -67,6 +67,7 @@ func TestIssue44(t *testing.T) {
 				queriedMock = iM
 				t.Logf("found mock-%d for query:%d", iM, i)
 				break
+			} else {
 			}
 		}
 		if queriedMock == -1 {
