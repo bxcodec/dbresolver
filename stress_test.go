@@ -8,6 +8,8 @@ import (
 )
 
 func TestIssue44(t *testing.T) {
+	t.Deadline()
+
 	noOfQueries := 19990
 
 	config := DBConfig{
