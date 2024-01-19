@@ -65,7 +65,7 @@ func TestIssue44(t *testing.T) {
 		for iM, mock := range allMocks {
 			if err := mock.ExpectationsWereMet(); err == nil {
 				queriedMock = iM
-				t.Logf("found mock-%d for query:%d", iM, i)
+				t.Logf("found mock:%d for query:%d", iM, i)
 				break
 			} else {
 			}
