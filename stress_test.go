@@ -60,7 +60,7 @@ func TestIssue44(t *testing.T) {
 	for i := 0; i < noOfQueries; i++ {
 
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
-			//t.Parallel() //TODO: not concurrent safe
+			//t.Parallel() //TODO: not concurrent safe because of shared mocks
 
 			for _, mock := range allMocks {
 				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
