@@ -88,7 +88,7 @@ func TestIssue44(t *testing.T) {
 			}
 			if queriedMock == -1 {
 				t.Errorf("failedMocks:%d", failedMocks)
-				t.Fatalf("no mock queried for query:%d", i)
+				t.Errorf("no mock queried for query:%d", i)
 			}
 		})
 
