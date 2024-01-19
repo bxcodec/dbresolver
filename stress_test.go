@@ -10,8 +10,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		1,
-		1,
+		4,
+		4,
 		RandomLB,
 	}
 
