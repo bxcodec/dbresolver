@@ -75,7 +75,5 @@ func TestIssue44(t *testing.T) {
 			t.Errorf("failedMocks:%d", failedMocks)
 			t.Fatalf("no mock queried for query:%d", i)
 		}
-
 	}
-
 }
