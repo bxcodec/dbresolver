@@ -10,8 +10,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		100,
-		200,
+		10,
+		10,
 		RandomLB,
 	}
 
@@ -47,11 +47,15 @@ func TestIssue44(t *testing.T) {
 
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
+	var err error
 	for i := 0; i < noOfQueries; i++ {
-		query := "select 1"
-		//mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(0, 0)).WillDelayFor(time.Millisecond * 50)
-		//_, err = resolver.ExecContext(context.Background(), query)
-		_, err := resolver.Query(query)
+		query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
+
+		for _, mock := range append(mockPrimaries, mockReplicas...) {
+			mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+		}
+
+		_, err = resolver.Query(query)
 		if err != nil {
 			t.Errorf("db error: %s", err)
 		}
