@@ -14,6 +14,9 @@ include ./misc/makefile/tools.Makefile
 build: test
 	@go build ./...
 
+setup:
+	go install golang.org/x/tools/cmd/goimports@latest
+
 install-deps: gotestsum tparse ## Install Development Dependencies (localy).
 deps: $(GOTESTSUM) $(TPARSE) ## Checks for Global Development Dependencies.
 deps:
@@ -33,6 +36,9 @@ run-tests: $(GOTESTSUM)
 
 test: run-tests $(TPARSE) ## Run Tests & parse details
 	@cat gotestsum.json.out | $(TPARSE) -all -notests
+
+pre-lint:
+	 goimports -local github.com/golangci/golangci-lint -w .
 
 
 lint: $(GOLANGCI) ## Runs golangci-lint with predefined configuration
