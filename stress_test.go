@@ -79,7 +79,7 @@ func TestIssue44(t *testing.T) {
 					t.Logf("found mock:%d for query:%d", iM, i)
 				} else {
 					//t.Errorf("expect mock:%d error: %s", iM, err)
-					failedMocks += 1
+					failedMocks++
 					_, err = allDBs[iM].Query(query)
 					if err != nil {
 						t.Errorf("db error: %s", err)
