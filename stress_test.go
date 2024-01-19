@@ -48,12 +48,14 @@ func TestIssue44(t *testing.T) {
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
 	allMocks := append(mockPrimaries, mockReplicas...)
+	allDBs := append(primaries, replicas...)
 	var err error
 	for i := 0; i < noOfQueries; i++ {
 		query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 
 		for _, mock := range allMocks {
 			mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+			mock.MatchExpectationsInOrder(false)
 		}
 
 		_, err = resolver.Query(query)
@@ -64,11 +66,20 @@ func TestIssue44(t *testing.T) {
 		queriedMock := -1
 		failedMocks := 0
 		for iM, mock := range allMocks {
+			//mock.MatchExpectationsInOrder(false)
 			if err := mock.ExpectationsWereMet(); err == nil {
 				queriedMock = iM
 				t.Logf("found mock:%d for query:%d", iM, i)
 				break
 			}
+			allDBs[iM].Query(query)
+			//if iM>len(primaries)-1{
+			//	rP:=iM-len(primaries)
+			//	replicas[rP].Query(query)
+			//}else{
+			//
+			//}
+
 			failedMocks += 1
 		}
 		if queriedMock == -1 {
