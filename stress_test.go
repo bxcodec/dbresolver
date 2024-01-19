@@ -47,17 +47,29 @@ func TestIssue44(t *testing.T) {
 
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
+	allMocks := append(mockPrimaries, mockReplicas...)
 	var err error
 	for i := 0; i < noOfQueries; i++ {
 		query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 
-		for _, mock := range append(mockPrimaries, mockReplicas...) {
+		for _, mock := range allMocks {
 			mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 		}
 
 		_, err = resolver.Query(query)
 		if err != nil {
 			t.Errorf("db error: %s", err)
+		}
+
+		queriedMock := -1
+		for iM, mock := range allMocks {
+			if err := mock.ExpectationsWereMet(); err == nil {
+				queriedMock = iM
+				break
+			}
+		}
+		if queriedMock == -1 {
+			t.Fatalf("no mock was queried for query %d", i)
 		}
 
 	}
