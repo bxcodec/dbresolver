@@ -4,12 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/bxcodec/dbresolver/v2"
-	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/bxcodec/dbresolver/v2"
+	"github.com/labstack/echo/v4"
 
 	"github.com/Masterminds/squirrel"
 	_ "github.com/lib/pq"
