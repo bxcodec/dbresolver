@@ -10,8 +10,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		4,
-		4,
+		2,
+		1,
 		RandomLB,
 	}
 
@@ -43,6 +43,7 @@ func TestIssue44(t *testing.T) {
 
 		replicas[i] = db
 		mockReplicas[i] = mock
+		mock.MatchExpectationsInOrder(false)
 	}
 
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
@@ -66,13 +67,17 @@ func TestIssue44(t *testing.T) {
 		queriedMock := -1
 		failedMocks := 0
 		for iM, mock := range allMocks {
-			//mock.MatchExpectationsInOrder(false)
 			if err := mock.ExpectationsWereMet(); err == nil {
 				queriedMock = iM
 				t.Logf("found mock:%d for query:%d", iM, i)
 				break
+			} else {
+				t.Errorf("expect mock:%d error: %s", iM, err)
 			}
-			allDBs[iM].Query(query)
+			_, err = allDBs[iM].Query(query)
+			if err != nil {
+				t.Errorf("db error: %s", err)
+			}
 			//if iM>len(primaries)-1{
 			//	rP:=iM-len(primaries)
 			//	replicas[rP].Query(query)
