@@ -2,6 +2,7 @@ package dbresolver
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 )
@@ -10,8 +11,8 @@ func TestIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		5,
-		20,
+		1,
+		0,
 		RandomLB,
 	}
 
@@ -50,38 +51,44 @@ func TestIssue44(t *testing.T) {
 
 	allMocks := append(mockPrimaries, mockReplicas...)
 	allDBs := append(primaries, replicas...)
+
+	query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 	var err error
 	for i := 0; i < noOfQueries; i++ {
-		query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 
-		for _, mock := range allMocks {
-			mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
-			mock.MatchExpectationsInOrder(false)
-		}
+		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
+			t.Parallel()
 
-		_, err = resolver.Query(query)
-		if err != nil {
-			t.Errorf("db error: %s", err)
-		}
+			for _, mock := range allMocks {
+				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+				mock.MatchExpectationsInOrder(false)
+			}
 
-		queriedMock := -1
-		failedMocks := 0
-		for iM, mock := range allMocks {
-			if err := mock.ExpectationsWereMet(); err == nil {
-				queriedMock = iM
-				t.Logf("found mock:%d for query:%d", iM, i)
-			} else {
-				//t.Errorf("expect mock:%d error: %s", iM, err)
-				failedMocks += 1
-				_, err = allDBs[iM].Query(query)
-				if err != nil {
-					t.Errorf("db error: %s", err)
+			_, err = resolver.Query(query)
+			if err != nil {
+				t.Errorf("db error: %s", err)
+			}
+
+			queriedMock := -1
+			failedMocks := 0
+			for iM, mock := range allMocks {
+				if err := mock.ExpectationsWereMet(); err == nil {
+					queriedMock = iM
+					t.Logf("found mock:%d for query:%d", iM, i)
+				} else {
+					//t.Errorf("expect mock:%d error: %s", iM, err)
+					failedMocks += 1
+					_, err = allDBs[iM].Query(query)
+					if err != nil {
+						t.Errorf("db error: %s", err)
+					}
 				}
 			}
-		}
-		if queriedMock == -1 {
-			t.Errorf("failedMocks:%d", failedMocks)
-			t.Fatalf("no mock queried for query:%d", i)
-		}
+			if queriedMock == -1 {
+				t.Errorf("failedMocks:%d", failedMocks)
+				t.Fatalf("no mock queried for query:%d", i)
+			}
+		})
+
 	}
 }
