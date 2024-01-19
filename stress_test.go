@@ -68,7 +68,7 @@ func TestIssue44(t *testing.T) {
 
 			_, err = resolver.Query(query)
 			if err != nil {
-				t.Errorf("db error: %s", err)
+				t.Errorf("resolver error: %s", err)
 			}
 
 			queriedMock := -1
