@@ -36,7 +36,7 @@ func testMW(t *testing.T, config DBConfig) {
 	primaries := make([]*sql.DB, noOfPrimaries)
 	replicas := make([]*sql.DB, noOfReplicas)
 
-	mockPimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
+	mockPrimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
 	for i := 0; i < noOfPrimaries; i++ {
@@ -47,7 +47,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 
 		primaries[i] = db
-		mockPimaries[i] = mock
+		mockPrimaries[i] = mock
 	}
 
 	for i := 0; i < noOfReplicas; i++ {
@@ -67,7 +67,7 @@ func testMW(t *testing.T, config DBConfig) {
 
 		for i := 0; i < noOfPrimaries*6; i++ {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
-			mock := mockPimaries[robin]
+			mock := mockPrimaries[robin]
 
 			switch i % 6 {
 			case 0:
@@ -170,7 +170,7 @@ func testMW(t *testing.T, config DBConfig) {
 	t.Run("prepare", func(t *testing.T) {
 		query := "select 1"
 
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
@@ -194,7 +194,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 
 		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
-		mock := mockPimaries[robin]
+		mock := mockPrimaries[robin]
 
 		mock.ExpectExec(query)
 
@@ -204,7 +204,7 @@ func testMW(t *testing.T, config DBConfig) {
 	t.Run("prepare tx", func(t *testing.T) {
 		query := "select 1"
 
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectPrepare(query)
 			defer func(mock sqlmock.Sqlmock) {
 				if err := mock.ExpectationsWereMet(); err != nil {
@@ -228,7 +228,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 
 		robin := resolver.loadBalancer.predict(noOfPrimaries)
-		mock := mockPimaries[robin]
+		mock := mockPrimaries[robin]
 
 		mock.ExpectBegin()
 
@@ -252,7 +252,7 @@ func testMW(t *testing.T, config DBConfig) {
 	})
 
 	t.Run("ping", func(t *testing.T) {
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectPing()
 			mock.ExpectPing()
 			defer func(mock sqlmock.Sqlmock) {
@@ -282,7 +282,7 @@ func testMW(t *testing.T, config DBConfig) {
 	})
 
 	t.Run("close", func(t *testing.T) {
-		for _, mock := range mockPimaries {
+		for _, mock := range mockPrimaries {
 			mock.ExpectClose()
 		}
 		for _, mock := range mockReplicas {
