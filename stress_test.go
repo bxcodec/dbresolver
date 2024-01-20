@@ -164,7 +164,6 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			for _, mock := range allMocks {
 				//mockLocks[i].Lock()
 				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
-				mock.MatchExpectationsInOrder(false)
 				//mockLocks[i].Unlock()
 			}
 
