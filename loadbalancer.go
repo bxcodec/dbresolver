@@ -42,7 +42,6 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 }
 
 func (lb RandomLoadBalancer[T]) predict(n int) int {
-	rand.Seed(time.Now().UnixNano())
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
@@ -79,4 +78,8 @@ func (lb *RoundRobinLoadBalancer[T]) predict(n int) int {
 	}
 	counter := lb.counter
 	return int(atomic.AddUint64(&counter, 1) % uint64(n))
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
