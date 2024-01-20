@@ -98,7 +98,7 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	config := DBConfig{
 		5,
-		0,
+		3,
 		RandomLB,
 	}
 
@@ -159,14 +159,24 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	lb := resolver.loadBalancer
 
+	queryChecker := DefaultQueryTypeChecker{}
+
 	for i := 0; i < noOfQueries; i++ {
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			rnDB := lb.predict(len(allDBs))
+			//Release: update resolve logic
+			var rnDB int
+
+			switch queryChecker.Check(query) {
+
+			case QueryTypeWrite:
+				rnDB = lb.predict(len(primaries))
+			default:
+				rnDB = lb.predict(len(replicas))
+			}
 
 			curMock := mocks[rnDB]
-
 			curMock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
 			_, err = resolver.Query(query)
