@@ -97,7 +97,7 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 	noOfQueries := 19990
 
 	config := DBConfig{
-		1,
+		5,
 		0,
 		RandomLB,
 	}
