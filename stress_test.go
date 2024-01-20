@@ -94,7 +94,11 @@ func TestIssue44(t *testing.T) {
 }
 
 func TestConcurrencyRandomLBIssue44(t *testing.T) {
-	noOfQueries := 19990
+	noOfQueries := int(1e5)
+
+	if testing.Short() {
+		noOfQueries = 19990
+	}
 
 	config := DBConfig{
 		5,
