@@ -98,7 +98,7 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	config := DBConfig{
 		1,
-		2,
+		0,
 		RandomLB,
 	}
 
