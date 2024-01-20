@@ -2,7 +2,6 @@ package dbresolver
 
 import (
 	"database/sql"
-	"github.com/labstack/gommon/log"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -32,21 +31,19 @@ func (lb RandomLoadBalancer[T]) Name() LoadBalancerPolicy {
 
 // Resolve return the resolved option for Random LB.
 // Marked with go:nosplit to prevent preemption.
-//
-//go:nosplit
 func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
-	if len(lb.randInt) == 0 {
+	for len(lb.randInt) == 0 {
 		lb.predict(len(dbs))
 	}
 	randomInt := <-lb.randInt
 	return dbs[randomInt]
 }
 
+//go:nosplit
 func (lb RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
-	log.Info("predict", idx)
 	lb.randInt <- idx
 	return idx
 }
