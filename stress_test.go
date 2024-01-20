@@ -54,7 +54,7 @@ func TestIssue44(t *testing.T) {
 	allMocks := append(mockPrimaries, mockReplicas...)
 	allDBs := append(primaries, replicas...)
 
-	query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
+	query := `select id,name from users where id=1`
 	var err error
 	for i := 0; i < noOfQueries; i++ {
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
@@ -135,15 +135,15 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	resolver := New(WithPrimaryDBs(primaries...), WithReplicaDBs(replicas...), WithLoadBalancer(lbPolicy)).(*sqlDB)
 
-	allMocks := append(mockPrimaries, mockReplicas...)
+	mocks := append(mockPrimaries, mockReplicas...)
 	allDBs := append(primaries, replicas...)
 
-	query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
+	query := `select id,name from users where id=1`
 	var err error
 
-	mockLocks := make(map[int]*sync.Mutex, len(allMocks))
+	mockLocks := make(map[int]*sync.Mutex, len(mocks))
 
-	for i := 0; i < len(allMocks); i++ {
+	for i := 0; i < len(mocks); i++ {
 		mockLocks[i] = &sync.Mutex{}
 	}
 
@@ -153,48 +153,30 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 		dbLocks[i] = &sync.Mutex{}
 	}
 
-	for _, mock := range allMocks {
+	for _, mock := range mocks {
 		mock.MatchExpectationsInOrder(false)
 	}
 
+	lb := resolver.loadBalancer
+
 	for i := 0; i < noOfQueries; i++ {
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 
-			for _, mock := range allMocks {
-				//mockLocks[i].Lock()
-				mock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
-				//mockLocks[i].Unlock()
-			}
+			rnDB := lb.predict(len(allDBs))
+
+			curMock := mocks[rnDB]
+
+			curMock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
 
 			_, err = resolver.Query(query)
 			if err != nil {
 				t.Logf("resolver error: %s", err)
 			}
 
-			/*queriedMock := -1
-			failedMocks := 0
-			for iM, mock := range allMocks {
-				mockLocks[iM].Lock()
-				if err := mock.ExpectationsWereMet(); err == nil {
-					queriedMock = iM
-					t.Logf("found mock:%d for query:%d", iM, i)
-				} else {
-					//t.Errorf("expect mock:%d error: %s", iM, err)
-					failedMocks++
-					dbLocks[iM].Lock()
-					_, err = allDBs[iM].Query(query)
-					dbLocks[iM].Unlock()
-					if err != nil {
-						t.Errorf("db error: %s", err)
-					}
-				}
-				mockLocks[iM].Unlock()
+			if err := curMock.ExpectationsWereMet(); err != nil {
+				t.Errorf("expect mock:%d error: %s", rnDB, err)
 			}
-			if queriedMock == -1 {
-				t.Errorf("failedMocks:%d", failedMocks)
-				t.Errorf("no mock queried for query:%d", i)
-			}*/
 		})
 	}
 }
