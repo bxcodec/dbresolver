@@ -2,6 +2,7 @@ package dbresolver
 
 import (
 	"database/sql"
+	"github.com/labstack/gommon/log"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -45,6 +46,7 @@ func (lb RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
 	idx := rand.Intn(max-min+1) + min
+	log.Info("predict", idx)
 	lb.randInt <- idx
 	return idx
 }
