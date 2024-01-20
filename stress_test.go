@@ -173,10 +173,12 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			if err != nil {
 				t.Logf("resolver error: %s", err)
 			}
-
-			if err := curMock.ExpectationsWereMet(); err != nil {
-				t.Errorf("expect mock:%d error: %s", rnDB, err)
-			}
 		})
+	}
+
+	for _, curMock := range mocks {
+		if err := curMock.ExpectationsWereMet(); err != nil {
+			t.Errorf("expect mock error: %s", err)
+		}
 	}
 }
