@@ -98,7 +98,7 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	config := DBConfig{
 		5,
-		3,
+		5,
 		RandomLB,
 	}
 
@@ -169,7 +169,6 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			var rnDB int
 
 			switch queryChecker.Check(query) {
-
 			case QueryTypeWrite:
 				rnDB = lb.predict(len(primaries))
 			default:
