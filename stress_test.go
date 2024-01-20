@@ -153,9 +153,13 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 		dbLocks[i] = &sync.Mutex{}
 	}
 
+	for _, mock := range allMocks {
+		mock.MatchExpectationsInOrder(false)
+	}
+
 	for i := 0; i < noOfQueries; i++ {
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
-			t.Parallel() //TODO: not concurrent safe because of shared mocks
+			t.Parallel()
 
 			for _, mock := range allMocks {
 				//mockLocks[i].Lock()
