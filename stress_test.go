@@ -161,7 +161,7 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 
 	for i := 0; i < noOfQueries; i++ {
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
-			//t.Parallel()
+			t.Parallel()
 
 			rnDB := lb.predict(len(allDBs))
 
