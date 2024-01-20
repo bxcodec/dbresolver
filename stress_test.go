@@ -57,7 +57,6 @@ func TestIssue44(t *testing.T) {
 	query := `UPDATE users SET name='Hiro' where id=1 RETURNING id,name`
 	var err error
 	for i := 0; i < noOfQueries; i++ {
-
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
 			//t.Parallel() //TODO: not concurrent safe because of shared mocks
 
@@ -91,7 +90,6 @@ func TestIssue44(t *testing.T) {
 				t.Errorf("no mock queried for query:%d", i)
 			}
 		})
-
 	}
 }
 
@@ -156,7 +154,6 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 	}
 
 	for i := 0; i < noOfQueries; i++ {
-
 		t.Run(fmt.Sprintf("q%d", i), func(t *testing.T) {
 			t.Parallel() //TODO: not concurrent safe because of shared mocks
 
@@ -196,6 +193,5 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 				t.Errorf("no mock queried for query:%d", i)
 			}*/
 		})
-
 	}
 }
