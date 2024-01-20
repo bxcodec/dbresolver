@@ -168,6 +168,10 @@ issues:
     - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
 
+    - path: \.go
+      linters:
+        - gochecknoinits
+
 run:
   timeout: 5m
   go: "1.18"
