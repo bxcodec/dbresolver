@@ -39,7 +39,6 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 	return dbs[randomInt]
 }
 
-//go:nosplit
 func (lb RandomLoadBalancer[T]) predict(n int) int {
 	max := n - 1
 	min := 0
