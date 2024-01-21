@@ -30,12 +30,12 @@ jobs:
           - os: macos-latest
             gocache: /tmp/go/gocache
 
-      fail-fast: true
-      max-parallel: 5
+      fail-fast: false
+      max-parallel: 3
 
     runs-on: ${{ matrix.os }}
 
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     env:
       GOCACHE: ${{matrix.gocache}}
