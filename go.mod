@@ -29,4 +29,8 @@ retract (
 	v2.0.0-alpha.3
 	v2.0.0-alpha.2
 	v2.0.0-alpha
+
+//	retract due to concurrency issue with RandomLB: issue#44
+	v2.0.1
+	v2.1.0
 )
