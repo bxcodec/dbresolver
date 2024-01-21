@@ -23,16 +23,16 @@ type DB interface {
 	// Conn only available for the primary db or the first primary db (if using multi-primary)
 	Conn(ctx context.Context) (Conn, error)
 	Driver() driver.Driver
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Exec(query string, args ...any) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Ping() error
 	PingContext(ctx context.Context) error
 	Prepare(query string) (Stmt, error)
 	PrepareContext(ctx context.Context, query string) (Stmt, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	SetConnMaxIdleTime(d time.Duration)
 	SetConnMaxLifetime(d time.Duration)
 	SetMaxIdleConns(n int)
@@ -114,14 +114,14 @@ func (db *sqlDB) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 // Exec executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
-func (db *sqlDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db *sqlDB) Exec(query string, args ...any) (sql.Result, error) {
 	return db.ExecContext(context.Background(), query, args...)
 }
 
 // ExecContext executes a query without returning any rows.
 // The args are for any placeholder parameters in the query.
 // Exec uses the RW-database as the underlying db connection
-func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *sqlDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return db.ReadWrite().ExecContext(ctx, query, args...)
 }
 
@@ -202,13 +202,13 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 
 // Query executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (db *sqlDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (db *sqlDB) Query(query string, args ...any) (*sql.Rows, error) {
 	return db.QueryContext(context.Background(), query, args...)
 }
 
 // QueryContext executes a query that returns rows, typically a SELECT.
 // The args are for any placeholder parameters in the query.
-func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
+func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...any) (rows *sql.Rows, err error) {
 	var curDB *sql.DB
 	writeFlag := db.queryTypeChecker.Check(query) == QueryTypeWrite
 
@@ -228,14 +228,14 @@ func (db *sqlDB) QueryContext(ctx context.Context, query string, args ...interfa
 // QueryRow executes a query that is expected to return at most one row.
 // QueryRow always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-func (db *sqlDB) QueryRow(query string, args ...interface{}) *sql.Row {
+func (db *sqlDB) QueryRow(query string, args ...any) *sql.Row {
 	return db.QueryRowContext(context.Background(), query, args...)
 }
 
 // QueryRowContext executes a query that is expected to return at most one row.
 // QueryRowContext always return a non-nil value.
 // Errors are deferred until Row's Scan method is called.
-func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (db *sqlDB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	var curDB *sql.DB
 	writeFlag := db.queryTypeChecker.Check(query) == QueryTypeWrite
 
