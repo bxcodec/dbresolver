@@ -31,8 +31,9 @@ TESTS_ARGS += -failfast
 TESTS_ARGS += -coverprofile   coverage.out
 TESTS_ARGS += -timeout        5m
 TESTS_ARGS += -race
+TESTS_ARGS += -short
 run-tests: $(GOTESTSUM)
-	@ gotestsum $(TESTS_ARGS) -short
+	@ gotestsum $(TESTS_ARGS)
 
 test: run-tests $(TPARSE) ## Run Tests & parse details
 	@cat gotestsum.json.out | $(TPARSE) -all -notests
