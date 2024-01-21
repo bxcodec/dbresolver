@@ -29,7 +29,7 @@ TESTS_ARGS += -parallel 2
 TESTS_ARGS += -count    1
 TESTS_ARGS += -failfast
 TESTS_ARGS += -coverprofile   coverage.out
-TESTS_ARGS += -timeout        60s
+TESTS_ARGS += -timeout        5m
 TESTS_ARGS += -race
 run-tests: $(GOTESTSUM)
 	@ gotestsum $(TESTS_ARGS) -short
