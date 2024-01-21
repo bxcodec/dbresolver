@@ -143,7 +143,6 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 	allDBs := append(primaries, replicas...)
 
 	query := `select id,name from users where id=1`
-	var err error
 
 	mockLocks := make(map[int]*sync.Mutex, len(mocks))
 
@@ -180,9 +179,11 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			}
 
 			curMock := mocks[rnDB]
+			mockLocks[rnDB].Lock()
 			curMock.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+			mockLocks[rnDB].Unlock()
 
-			_, err = resolver.Query(query)
+			_, err := resolver.Query(query)
 			if err != nil {
 				t.Logf("resolver error: %s", err)
 			}
