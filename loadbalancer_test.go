@@ -2,11 +2,14 @@ package dbresolver
 
 import (
 	"database/sql"
+	"go.uber.org/goleak"
 	"testing"
 	"testing/quick"
 )
 
 func TestReplicaRoundRobin(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	db := &RoundRobinLoadBalancer[*sql.DB]{}
 	last := -1
 
