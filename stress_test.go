@@ -3,6 +3,7 @@ package dbresolver
 import (
 	"database/sql"
 	"fmt"
+	"go.uber.org/goleak"
 	"sync"
 	"testing"
 
@@ -10,6 +11,8 @@ import (
 )
 
 func TestIssue44(t *testing.T) {
+	defer goleak.VerifyNone(t, goleak.IgnoreCurrent())
+
 	noOfQueries := 19990
 
 	config := DBConfig{
@@ -195,4 +198,8 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			t.Errorf("expect mock error: %s", err)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }
