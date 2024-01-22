@@ -200,6 +200,9 @@ func TestConcurrencyRandomLBIssue44(t *testing.T) {
 			t.Errorf("expect mock error: %s", err)
 		}
 	}
+
+	err := resolver.Close()
+	handleDBError(t, err)
 }
 
 func TestMain(m *testing.M) {
