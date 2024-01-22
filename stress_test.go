@@ -94,6 +94,8 @@ func TestIssue44(t *testing.T) {
 			}
 		})
 	}
+	err = resolver.Close()
+	handleDBError(t, err)
 }
 
 func TestConcurrencyRandomLBIssue44(t *testing.T) {
