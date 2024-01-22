@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"go.uber.org/goleak"
 	"testing"
 	"time"
 
@@ -297,7 +298,7 @@ func testMW(t *testing.T, config DBConfig) {
 }
 
 func TestMultiWrite(t *testing.T) {
-	t.Parallel()
+	defer goleak.VerifyNone(t)
 
 	loadBalancerPolices := []LoadBalancerPolicy{
 		RoundRobinLB,

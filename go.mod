@@ -12,9 +12,14 @@ require (
 require (
 	github.com/stretchr/testify v1.8.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/goleak v1.3.0 // indirect
 )
 
 retract (
+	v2.1.0
+
+	//	retract due to concurrency issue with RandomLB: issue#44
+	v2.0.1
 	// below versions doesn't support Update,Insert queries with "RETURNING CLAUSE"
 	//	v1.0.0
 	//    v1.0.0-beta
@@ -29,8 +34,4 @@ retract (
 	v2.0.0-alpha.3
 	v2.0.0-alpha.2
 	v2.0.0-alpha
-
-//	retract due to concurrency issue with RandomLB: issue#44
-	v2.0.1
-	v2.1.0
 )
