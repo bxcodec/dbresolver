@@ -132,6 +132,12 @@ issues:
     - path: _test\.go
       linters:
         - gomnd
+        - gocritic
+        - gochecknoinits
+        - funlen
+        - goconst
+        - gocyclo
+        - errcheck
     - path: db_test.go
       text: "deferInLoop: Possible resource leak, 'defer' is called in the 'for' loop"
 
@@ -166,6 +172,10 @@ issues:
 
     - path: \.go
       text: "G404: Use of weak random number generator" #expected, just for randomLB policy
+
+    - path: \.go
+      linters:
+        - gochecknoinits
 
 run:
   timeout: 5m

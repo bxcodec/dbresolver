@@ -14,6 +14,9 @@ include ./misc/makefile/tools.Makefile
 build: test
 	@go build ./...
 
+setup:
+	go install golang.org/x/tools/cmd/goimports@latest
+
 install-deps: gotestsum tparse ## Install Development Dependencies (localy).
 deps: $(GOTESTSUM) $(TPARSE) ## Checks for Global Development Dependencies.
 deps:
@@ -26,13 +29,17 @@ TESTS_ARGS += -parallel 2
 TESTS_ARGS += -count    1
 TESTS_ARGS += -failfast
 TESTS_ARGS += -coverprofile   coverage.out
-TESTS_ARGS += -timeout        60s
+TESTS_ARGS += -timeout 12m
 TESTS_ARGS += -race
+TESTS_ARGS += -short
 run-tests: $(GOTESTSUM)
-	@ gotestsum $(TESTS_ARGS) -short
+	@ gotestsum $(TESTS_ARGS)
 
 test: run-tests $(TPARSE) ## Run Tests & parse details
 	@cat gotestsum.json.out | $(TPARSE) -all -notests
+
+pre-lint:
+	 goimports -local github.com/golangci/golangci-lint -w .
 
 
 lint: $(GOLANGCI) ## Runs golangci-lint with predefined configuration

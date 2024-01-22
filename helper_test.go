@@ -3,12 +3,15 @@ package dbresolver
 import (
 	"errors"
 	"fmt"
+	"go.uber.org/goleak"
 	"net"
 	"runtime"
 	"testing"
 )
 
 func TestParallelFunction(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	seq := []int{1, 2, 3, 4, 5, 6, 7, 8}
 	err := doParallely(len(seq), func(i int) error {
