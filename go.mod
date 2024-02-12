@@ -6,13 +6,10 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/google/gofuzz v1.2.0
 	github.com/lib/pq v1.10.9
-	go.uber.org/multierr v1.8.0
+	go.uber.org/multierr v1.11.0
 )
 
-require (
-	github.com/stretchr/testify v1.8.1 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-)
+require github.com/stretchr/testify v1.8.1 // indirect
 
 retract (
 	// below versions doesn't support Update,Insert queries with "RETURNING CLAUSE"
