@@ -10,14 +10,14 @@ import (
 type Tx interface {
 	Commit() error
 	Rollback() error
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	Exec(query string, args ...any) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Prepare(query string) (Stmt, error)
 	PrepareContext(ctx context.Context, query string) (Stmt, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	Query(query string, args ...any) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Stmt(stmt Stmt) Stmt
 	StmtContext(ctx context.Context, stmt Stmt) Stmt
 }
@@ -35,11 +35,11 @@ func (t *tx) Rollback() error {
 	return t.tx.Rollback()
 }
 
-func (t *tx) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (t *tx) Exec(query string, args ...any) (sql.Result, error) {
 	return t.ExecContext(context.Background(), query, args...)
 }
 
-func (t *tx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (t *tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return t.tx.ExecContext(ctx, query, args...)
 }
 
@@ -56,19 +56,19 @@ func (t *tx) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 	return newSingleDBStmt(t.sourceDB, txstmt, true), nil
 }
 
-func (t *tx) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (t *tx) Query(query string, args ...any) (*sql.Rows, error) {
 	return t.QueryContext(context.Background(), query, args...)
 }
 
-func (t *tx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (t *tx) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return t.tx.QueryContext(ctx, query, args...)
 }
 
-func (t *tx) QueryRow(query string, args ...interface{}) *sql.Row {
+func (t *tx) QueryRow(query string, args ...any) *sql.Row {
 	return t.QueryRowContext(context.Background(), query, args...)
 }
 
-func (t *tx) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (t *tx) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	return t.tx.QueryRowContext(ctx, query, args...)
 }
 
