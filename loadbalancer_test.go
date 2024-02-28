@@ -11,7 +11,7 @@ func TestReplicaRoundRobin(t *testing.T) {
 	last := -1
 
 	err := quick.Check(func(n int) bool {
-		index := db.roundRobin(n)
+		index := db.predict(n)
 		if n <= 1 {
 			return index == 0
 		}
