@@ -3,7 +3,8 @@ export PATH   := $(PWD)/bin:$(PATH)
 # Default Shell
 export SHELL  := bash
 # Type of OS: Linux or Darwin.
-export OSTYPE := $(shell uname -s)
+export OSTYPE := $(shell uname -s | tr A-Z a-z)
+export ARCH := $(shell uname -m)
 
 ifeq ($(OSTYPE),Darwin)
     export MallocNanoZone=0

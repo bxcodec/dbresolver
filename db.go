@@ -184,7 +184,7 @@ func (db *sqlDB) PrepareContext(ctx context.Context, query string) (_stmt Stmt, 
 
 	err = multierr.Combine(errPrimaries, errReplicas)
 	if err != nil {
-		return
+		return //nolint: nakedret
 	}
 
 	_query := strings.ToUpper(query)
