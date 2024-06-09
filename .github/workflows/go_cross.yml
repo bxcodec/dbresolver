@@ -46,6 +46,8 @@ jobs:
           go-version: ${{ matrix.go-version }}
           check-latest: true
 
+      - name: Clear Go cache
+        run: go clean -cache
       # - name: Cache Go tests
       #   uses: actions/cache@v3
       #   with:
