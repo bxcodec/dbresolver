@@ -39,7 +39,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
+      - name: Fetch latest changes
+        run: git fetch --all
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
