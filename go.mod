@@ -1,6 +1,6 @@
 module github.com/bxcodec/dbresolver/v2
 
-go 1.20
+go 1.22
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -9,10 +9,7 @@ require (
 	go.uber.org/multierr v1.11.0
 )
 
-require (
-	github.com/stretchr/testify v1.8.1 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
-)
+require github.com/stretchr/testify v1.8.1 // indirect
 
 retract (
 	// below versions doesn't support Update,Insert queries with "RETURNING CLAUSE"
