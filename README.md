@@ -9,9 +9,15 @@ Golang Database Resolver and Wrapper for any multiple database connections topol
 
 This DBResolver library will split your connections to correct defined DBs. Eg, all read query will routed to ReadOnly replica db, and all write operation(Insert, Update, Delete) will routed to Primary/Master DB.
 
-Read more for the explanation on this [blog post](https://betterprogramming.pub/create-a-cross-region-rdbms-connection-library-with-dbresolver-5072bed6a7b8)
+**Read More**
+|Items| Link|  
+------|-----|
+|Blogpost| [blog post](https://betterprogramming.pub/create-a-cross-region-rdbms-connection-library-with-dbresolver-5072bed6a7b8) |
+|Excalidraw| [diagram](https://excalidraw.com/#json=DTs8yxHOGF6uLkjnZny4z,RVo8iwhO0Rk6DRGkKuNZTg)|
+|GoSG Meetup Demo| [repository](https://github.com/bxcodec/dbresolver-examples) |
+| GoSG Presentation | [deck](https://www.canva.com/design/DAFgbpc7tfw/bEXVFtcHEnlFxKVBdnUggA/edit?utm_content=DAFgbpc7tfw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton) |
+| Instagram | [post](https://www.instagram.com/p/CnlDFPsBAJG/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==)|
 
-Excalidraw live [diagram](https://excalidraw.com/#json=DTs8yxHOGF6uLkjnZny4z,RVo8iwhO0Rk6DRGkKuNZTg)
 ### Usecase 1: Separated RW and RO Database connection
 
 <details open>
@@ -64,7 +70,7 @@ go get -u github.com/bxcodec/dbresolver/v2
 
 # Example
 
-### Implementing DB Resolver using *sql.DB
+### Implementing DB Resolver using \*sql.DB
 
 <details open>
 
@@ -151,7 +157,5 @@ func main() {
   - `QueryRowContext`
 
 ## Contribution
-
----
 
 To contrib to this project, you can open a PR or an issue.
