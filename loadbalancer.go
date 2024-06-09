@@ -42,10 +42,10 @@ func (lb RandomLoadBalancer[T]) Resolve(dbs []T) T {
 }
 
 func (lb RandomLoadBalancer[T]) predict(n int) int {
-	rand.Seed(time.Now().UnixNano()) //nolint
-	max := n - 1                     //nolint
-	min := 0                         //nolint
-	idx := rand.Intn(max-min+1) + min
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	max := n - 1 //nolint
+	min := 0     //nolint
+	idx := r.Intn(max-min+1) + min
 	lb.randInt <- idx
 	return idx
 }
