@@ -1,6 +1,6 @@
 module github.com/bxcodec/dbresolver/v2/examples/gosg-demo
 
-go 1.20
+go 1.22
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
