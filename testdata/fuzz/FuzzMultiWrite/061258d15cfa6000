@@ -1,4 +1,0 @@
-go test fuzz v1
-byte('@')
-byte('\x01')
-byte('\x01')
