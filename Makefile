@@ -41,10 +41,4 @@ lint: $(GOLANGCI) ## Runs golangci-lint with predefined configuration
 	golangci-lint version
 	golangci-lint run -c .golangci.yaml ./...
 
-
-release:
-	@sh scripts/release.sh
-
-
-
 .PHONY: lint lint-prepare clean build unittest

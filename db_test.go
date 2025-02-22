@@ -144,7 +144,7 @@ func testMW(t *testing.T, config DBConfig) {
 
 			switch i % 4 {
 			case 0:
-				query = "select 1'"
+				query = "select '1'"
 				mock.ExpectQuery(query)
 				resolver.Query(query)
 			case 1:
