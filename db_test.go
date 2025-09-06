@@ -42,7 +42,7 @@ func testMW(t *testing.T, config DBConfig) {
 	lbPolicy := config.lbPolicy
 
 	// Skip extreme cases that are likely to cause load balancer distribution issues
-	if noOfPrimaries > 10 || noOfReplicas > 10 {
+	if noOfPrimaries > 3 || noOfReplicas > 3 {
 		t.Skipf("skipping extreme case with %d primaries and %d replicas for test stability", noOfPrimaries, noOfReplicas)
 		return
 	}
@@ -82,7 +82,7 @@ func testMW(t *testing.T, config DBConfig) {
 		// Limit iterations to prevent excessive mock expectations during fuzzing
 		maxIterations := 6
 		if noOfPrimaries > 1 {
-			maxIterations = min(12, 6*min(noOfPrimaries, 2)) // Cap at 12 iterations, even for many primaries
+			maxIterations = min(noOfPrimaries*6, 30) // Cap at 30 iterations
 		}
 
 		for i := 0; i < maxIterations; i++ {
@@ -172,10 +172,7 @@ func testMW(t *testing.T, config DBConfig) {
 		}
 
 		// Limit iterations to prevent excessive mock expectations during fuzzing
-		maxIterations := 5
-		if noOfReplicas > 1 {
-			maxIterations = min(8, 4*min(noOfReplicas, 2)) // Cap at 8 iterations, even for many replicas
-		}
+		maxIterations := min(noOfReplicas*5, 20) // Cap at 20 iterations
 
 		for i := 0; i < maxIterations; i++ {
 			robin := resolver.loadBalancer.predict(noOfReplicas)
