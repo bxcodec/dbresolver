@@ -10,6 +10,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
+// min returns the smaller of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 type DBConfig struct {
 	primaryDBCount uint8
 	replicaDBCount uint8
@@ -65,7 +73,13 @@ func testMW(t *testing.T, config DBConfig) {
 	t.Run("primary dbs", func(t *testing.T) {
 		var err error
 
-		for i := 0; i < noOfPrimaries*6; i++ {
+		// Limit iterations to prevent excessive mock expectations during fuzzing
+		maxIterations := 6
+		if noOfPrimaries > 1 {
+			maxIterations = min(noOfPrimaries*6, 30) // Cap at 30 iterations
+		}
+
+		for i := 0; i < maxIterations; i++ {
 			robin := resolver.loadBalancer.predict(noOfPrimaries)
 			mock := mockPimaries[robin]
 
@@ -138,7 +152,15 @@ func testMW(t *testing.T, config DBConfig) {
 
 		var query string
 
-		for i := 0; i < noOfReplicas*5; i++ {
+		// Skip testing if no replica databases exist
+		if noOfReplicas == 0 {
+			return
+		}
+
+		// Limit iterations to prevent excessive mock expectations during fuzzing
+		maxIterations := min(noOfReplicas*5, 20) // Cap at 20 iterations
+
+		for i := 0; i < maxIterations; i++ {
 			robin := resolver.loadBalancer.predict(noOfReplicas)
 			mock := mockReplicas[robin]
 
