@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -28,6 +29,26 @@ func handleDBError(t *testing.T, err error) {
 
 }
 
+// nextIndex returns the pool index the next Resolve call on lb will select,
+// kept consistent with that Resolve so the test can arm the matching mock
+// before issuing the real query.
+//
+// Calling lb.predict directly here would desync round-robin: predict advances
+// the shared counter, and the resolver's own Resolve advances it again, so the
+// query lands on a different db than the one the test armed. For round-robin we
+// therefore compute the upcoming index without mutating the counter. For the
+// random policy predict pre-loads the shared channel, so the following Resolve
+// consumes exactly the value returned here and the two stay in sync.
+func nextIndex[T DBConnection](lb LoadBalancer[T], n int) int {
+	if rr, ok := lb.(*RoundRobinLoadBalancer[T]); ok {
+		if n <= 1 {
+			return 0
+		}
+		return int((atomic.LoadUint64(&rr.counter) + 1) % uint64(n))
+	}
+	return lb.predict(n)
+}
+
 func testMW(t *testing.T, config DBConfig) {
 
 	noOfPrimaries, noOfReplicas := int(config.primaryDBCount), int(config.replicaDBCount)
@@ -39,7 +60,7 @@ func testMW(t *testing.T, config DBConfig) {
 	mockPimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
-	for i := 0; i < noOfPrimaries; i++ {
+	for i := range noOfPrimaries {
 		db, mock, err := createMock()
 
 		if err != nil {
@@ -50,7 +71,7 @@ func testMW(t *testing.T, config DBConfig) {
 		mockPimaries[i] = mock
 	}
 
-	for i := 0; i < noOfReplicas; i++ {
+	for i := range noOfReplicas {
 		db, mock, err := createMock()
 		if err != nil {
 			t.Fatal("creating of mock failed")
@@ -66,7 +87,7 @@ func testMW(t *testing.T, config DBConfig) {
 		var err error
 
 		for i := 0; i < noOfPrimaries*6; i++ {
-			robin := resolver.loadBalancer.predict(noOfPrimaries)
+			robin := nextIndex(resolver.loadBalancer, noOfPrimaries)
 			mock := mockPimaries[robin]
 
 			switch i % 6 {
@@ -139,7 +160,7 @@ func testMW(t *testing.T, config DBConfig) {
 		var query string
 
 		for i := 0; i < noOfReplicas*5; i++ {
-			robin := resolver.loadBalancer.predict(noOfReplicas)
+			robin := nextIndex(resolver.loadBalancer, noOfReplicas)
 			mock := mockReplicas[robin]
 
 			switch i % 4 {
@@ -193,7 +214,7 @@ func testMW(t *testing.T, config DBConfig) {
 			return
 		}
 
-		robin := resolver.stmtLoadBalancer.predict(noOfPrimaries)
+		robin := nextIndex(resolver.stmtLoadBalancer, noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectExec(query)
@@ -227,7 +248,7 @@ func testMW(t *testing.T, config DBConfig) {
 			return
 		}
 
-		robin := resolver.loadBalancer.predict(noOfPrimaries)
+		robin := nextIndex(resolver.loadBalancer, noOfPrimaries)
 		mock := mockPimaries[robin]
 
 		mock.ExpectBegin()
