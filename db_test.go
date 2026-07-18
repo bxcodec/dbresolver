@@ -39,7 +39,7 @@ func testMW(t *testing.T, config DBConfig) {
 	mockPimaries := make([]sqlmock.Sqlmock, noOfPrimaries)
 	mockReplicas := make([]sqlmock.Sqlmock, noOfReplicas)
 
-	for i := 0; i < noOfPrimaries; i++ {
+	for i := range noOfPrimaries {
 		db, mock, err := createMock()
 
 		if err != nil {
@@ -50,7 +50,7 @@ func testMW(t *testing.T, config DBConfig) {
 		mockPimaries[i] = mock
 	}
 
-	for i := 0; i < noOfReplicas; i++ {
+	for i := range noOfReplicas {
 		db, mock, err := createMock()
 		if err != nil {
 			t.Fatal("creating of mock failed")

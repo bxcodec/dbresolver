@@ -11,12 +11,12 @@ import (
 type Conn interface {
 	Close() error
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error)
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	PingContext(ctx context.Context) error
 	PrepareContext(ctx context.Context, query string) (Stmt, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	Raw(f func(driverConn interface{}) error) (err error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	Raw(f func(driverConn any) error) (err error)
 }
 
 type conn struct {
@@ -40,7 +40,7 @@ func (c *conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
 	}, nil
 }
 
-func (c *conn) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (c *conn) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return c.conn.ExecContext(ctx, query, args...)
 }
 
@@ -60,14 +60,14 @@ func (c *conn) PrepareContext(ctx context.Context, query string) (Stmt, error) {
 	return newSingleDBStmt(c.sourceDB, pstmt, writeFlag), nil
 }
 
-func (c *conn) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (c *conn) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return c.conn.QueryContext(ctx, query, args...)
 }
 
-func (c *conn) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (c *conn) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	return c.conn.QueryRowContext(ctx, query, args...)
 }
 
-func (c *conn) Raw(f func(driverConn interface{}) error) (err error) {
+func (c *conn) Raw(f func(driverConn any) error) (err error) {
 	return c.conn.Raw(f)
 }

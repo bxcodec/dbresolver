@@ -11,12 +11,12 @@ import (
 // It holds a prepared statement for each underlying physical db.
 type Stmt interface {
 	Close() error
-	Exec(...interface{}) (sql.Result, error)
-	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
-	Query(...interface{}) (*sql.Rows, error)
-	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
-	QueryRow(args ...interface{}) *sql.Row
-	QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
+	Exec(...any) (sql.Result, error)
+	ExecContext(ctx context.Context, args ...any) (sql.Result, error)
+	Query(...any) (*sql.Rows, error)
+	QueryContext(ctx context.Context, args ...any) (*sql.Rows, error)
+	QueryRow(args ...any) *sql.Row
+	QueryRowContext(ctx context.Context, args ...any) *sql.Row
 }
 
 type stmt struct {
@@ -43,28 +43,28 @@ func (s *stmt) Close() error {
 // Exec executes a prepared statement with the given arguments
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
-func (s *stmt) Exec(args ...interface{}) (sql.Result, error) {
+func (s *stmt) Exec(args ...any) (sql.Result, error) {
 	return s.ExecContext(context.Background(), args...)
 }
 
 // ExecContext executes a prepared statement with the given arguments
 // and returns a Result summarizing the effect of the statement.
 // Exec uses the master as the underlying physical db.
-func (s *stmt) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (s *stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
 	return s.RWStmt().ExecContext(ctx, args...)
 }
 
 // Query executes a prepared query statement with the given
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
-func (s *stmt) Query(args ...interface{}) (*sql.Rows, error) {
+func (s *stmt) Query(args ...any) (*sql.Rows, error) {
 	return s.QueryContext(context.Background(), args...)
 }
 
 // QueryContext executes a prepared query statement with the given
 // arguments and returns the query results as a *sql.Rows.
 // Query uses the read only DB as the underlying physical db.
-func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (s *stmt) QueryContext(ctx context.Context, args ...any) (*sql.Rows, error) {
 	var curStmt *sql.Stmt
 	if s.writeFlag {
 		curStmt = s.RWStmt()
@@ -85,7 +85,7 @@ func (s *stmt) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRow uses the read only DB as the underlying physical db.
-func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
+func (s *stmt) QueryRow(args ...any) *sql.Row {
 	return s.QueryRowContext(context.Background(), args...)
 }
 
@@ -95,7 +95,7 @@ func (s *stmt) QueryRow(args ...interface{}) *sql.Row {
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *sql.Row's Scan scans the first selected row and discards the rest.
 // QueryRowContext uses the read only DB as the underlying physical db.
-func (s *stmt) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+func (s *stmt) QueryRowContext(ctx context.Context, args ...any) *sql.Row {
 	var curStmt *sql.Stmt
 	if s.writeFlag {
 		curStmt = s.RWStmt()

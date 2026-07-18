@@ -11,7 +11,7 @@ func doParallely(n int, fn func(i int) error) error {
 	errors := make(chan error, n)
 	wg := &sync.WaitGroup{}
 	wg.Add(n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		go func(i int) {
 			errors <- fn(i)
 			wg.Done()

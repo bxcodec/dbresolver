@@ -51,7 +51,7 @@ bin/tparse: bin
 GOLANGCI := $(shell command -v golangci-lint || echo "bin/golangci-lint")
 golangci-lint: bin/golangci-lint ## Installs golangci-lint (linter)
 
-bin/golangci-lint: VERSION := 1.59.0
+bin/golangci-lint: VERSION := 2.12.2
 bin/golangci-lint: GITHUB  := golangci/golangci-lint
 bin/golangci-lint: ARCHIVE := golangci-lint-$(VERSION)-$(OSTYPE)-$(ARCH).tar.gz
 bin/golangci-lint: bin
